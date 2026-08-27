@@ -1,0 +1,1500 @@
+%\documentclass[11pt]{article}
+%\usepackage[a4paper,margin=1in]{geometry}
+%\usepackage{amsmath,amssymb}
+%\usepackage{booktabs}
+%\usepackage{array}
+%\usepackage[T1]{fontenc}
+%\usepackage{lmodern}
+%\usepackage{microtype}
+%
+%\title{Nonnegative Matrix Factorization for Transcriptomics}
+%\author{}
+%\date{}
+
+% A Master's-Level Introduction to D-SPIN
+% Expanded educational version
+%
+% Based on:
+% J. Jiang et al., "D-SPIN constructs regulatory network models from
+% scRNA-seq revealing organizing principles of perturbation response",
+% Cell 189 (2026), 4159--4184.e35.
+%
+% This document is an educational simplification of the published method.
+% It intentionally omits some computational and inferential details.
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,bm,mathtools}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{ulem}
+
+\setstretch{1.08}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+
+\titleformat{\section}
+{\Large\bfseries}
+{\thesection}
+{0.7em}
+{}
+\titleformat{\subsection}
+{\large\bfseries}
+{\thesubsection}
+{0.7em}
+{}
+\titleformat{\subsubsection}
+{\normalsize\bfseries}
+{\thesubsubsection}
+{0.7em}
+{}
+
+\newcommand\identity{1\kern-0.25em\text{l}}
+
+%\hypersetup{
+%\noindent     colorlinks=true,
+%\noindent     linkcolor=blue,
+%\noindent     citecolor=blue,
+%\noindent     urlcolor=blue
+%\noindent }
+
+%\title{Nonnegative Matrix Factorization for Transcriptomics}
+\title{From NMF to D-SPIN}
+\author{A nonnecessary master thesis by Demetrio Magatti}
+\date{\today}
+
+\begin{document}
+
+\thispagestyle{empty}
+\maketitle
+\thispagestyle{empty}
+\clearpage
+\thispagestyle{empty}
+
+\newpage
+
+\thispagestyle{empty}
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic}
+
+\newpage
+
+\section{Nonnegative Matrix Factorization for transcriptomics}
+
+This section is based on the \textit{Learning the parts of objects by nonnegative matrix factorization} paper by D. D. Lee and H. S. Seung, expanded to cover genomics-related applications. The goal here so to extract and highlight the key points, while avoiding deep-diving into optimization algorithms, loss functions to be minimized and so on. The original paper is obviously much more detailed when it comes to that.
+
+\subsection{Image-related NMF}
+
+Let's take a collection of black-and-white images containing faces. Each picture contains a total on $n$ pixels.
+
+Each image can be flattened from 2 dimensions to 1 by collapsing it into a vector of $n$ pixel intensities. Given $m$ images, the result of the flattening is a matrix of positive values (pixel intensities cannot be negative)
+
+\[
+Y \in \mathbb{R}_{\geq 0}^{n\times m}
+\]
+
+The image database \textit{Y} is regarded as an $n \times m$ matrix V , each column of which contains \textit{n} nonnegative pixel
+values of one of the \textit{m} facial images. 
+
+The goal of \textbf{Nonnegative Matrix Factorization} (\textbf{NMF}) is to decompose \textit{Y} in a structure like 
+
+\[
+Y \approx HW
+\]
+
+or, more explicitly,
+
+\[ 
+Y_{i \mu} \approx \sum_{\alpha = 1}^r W_{i \alpha} H_{\alpha \mu}
+\]
+
+while imposing the \textbf{nonnegativity constraint}
+
+\[
+H\in\mathbb{R}_{\geq0}^{n\times r}
+\qquad
+W\in\mathbb{R}_{\geq0}^{r\times m}
+\]
+
+The columns of \textit{W} are called basis images. Each column of \textit{H} is called an encoding, and is in one-to-one
+correspondence with a face in \textit{Y} . An encoding consists of the coefficients by which a face is represented with
+a linear combination of basis images. 
+
+This nonnegativity constraint is what makes NMF different from ohter dimensionality reduction techniques like Principal Component Analysis. These constraints permit the combination of multiple basis images to represent a face, with the key point of only allowing additive combinations. In contrast to PCA, no subtractions can occur. For these reasons, the nonnegativity constraints are compatible with the intuitive notion of combining parts to form a whole, which is how NMF learns a part-based representation.
+
+\subsection{Bridging to genomics}
+
+Additive-only combinations are quite interesting when it comes to genomics, as a "negative" expression of a gene is something that cannot happen in nature and it is of difficult interpretation and understanding. 
+
+Therefore, we aim to build a correspondence which looks something like this
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Image NMF & Transcriptomics \\
+\midrule
+\textbf{source image} & \textbf{sample / spatial location} \\
+\textbf{pixels} & \textbf{genes} \\
+\textbf{basis image} & \textbf{gene-expression program / factor} \\
+\textbf{encoding of an image} & \textbf{factor activity in a sample/location} \\
+\bottomrule
+\end{tabular}
+\end{center} 
+\vspace{2mm}
+We can think of \textbf{gene program} as set or pattern of genes whose expression tends to vary together and that collectively reflects a biological process, cell state, or cellular function. In the specific context of NMF, the term usually refers more specifically to a learned factor characterized by a group of genes with high nonnegative weights, rather than to a predefined gene set. 
+
+\subsubsection{Source images}
+
+In image decomposition, you start with an image such as
+
+\[
+\boxed{\text{one image} = \text{one observation}}
+\]
+
+Each row of your matrix is one face, i.e. a set of pixel intensities which is unique to a specific face
+
+\[
+Y_i =
+[\text{pixel}_1,\text{pixel}_2,\ldots,\text{pixel}_{n}].
+\]
+
+In ordinary transcriptomics, we can make exactly the same construction. Suppose you have \textit{m} cells and measure \textit{n} genes. We go back exaclty to 
+
+\[
+Y\in\mathbb{R}_{\geq0}^{n\times m}.
+\]
+
+but now each row is now one cell
+
+\[
+Y_i =
+[\text{gene}_1,\text{gene}_2,\ldots,\text{gene}_{n}].
+\]
+
+The explicit analogy is
+
+\[
+\boxed{
+\text{image}
+\longleftrightarrow
+\text{cell/sample}
+}
+\]
+
+The image is a single observation whose features are pixel intensities.
+
+The cell is a single observation whose features are gene-expression counts.
+
+\subsubsection{Pixels}
+
+images have pixel intensities
+
+\[
+[\text{pixel}_1,~\text{pixel}_2,~\ldots,~\text{pixel}_{n}]
+\]
+
+whereas a genomic sample has 
+
+\[
+[\text{gene}_1,~\text{gene}_2,~\ldots,~\text{gene}_{n}].
+\]
+
+so the most direct analogy is
+
+\[
+\boxed{
+	\text{pixel}
+	\longleftrightarrow
+	\text{gene expression}
+}
+\]
+
+In both cases, these are the \textbf{features} describing the observation.
+
+There is a key difference to be noted. Pixels have a very obvious spatial relationship (e.g. pixel 100 is physically next to pixel 101), while genes generally don't have such a geometric relationship. Gene 100 is not necessarily ``close'' to gene 101 in any meaningful sense. When dealing with tissue samples where gene location is available, spatial information can be used. The process is an extension of NMF known as Nonnegative Spatial Factorization (NSF).
+
+\subsubsection{Basis images}
+
+Say that, for example, NMF discovers $r=10$ basis images. For $j = 1, ..., r$ we get 
+
+\[
+W_1 =
+\begin{bmatrix}
+w^j_1, \ldots , w^j_n
+\end{bmatrix}
+\]
+
+Each $W_j$ corresponds to a specific part of the faces: $W_1$ looks like an eye, $W_2$ looks like a nose, and so on. The key point is that a basis image is \textbf{not itself one of your original images}.
+
+It is a learned pattern that can be used to reconstruct the original images. For one specific source image
+
+\[
+\text{face}
+\approx
+2.0(\text{eyes})
++
+0.8(\text{nose})
++
+1.3(\text{mouth})
+\]
+
+The numbers $2.0,0.8,1.3$ are the \textbf{encoding} for that particular face.
+
+For transcriptomics, we replace ``pixel intensity'' with ``gene expression''. A basis image is therefore replaced by a \textbf{gene-expression pattern across genes}.
+
+For example, suppose NMF discovers factor 1
+
+\[
+W_1 =
+\begin{bmatrix}
+0.9, ~0.8 , ~ 0.7 , ~ 0.1 , ~ 0.0 , ~ \cdots
+\end{bmatrix}
+\]
+
+where the highly weighted genes are
+
+\[
+\begin{bmatrix}
+\text{GAD1},~\text{GAD2},~\text{SLC6A1}, ~\text{COL1A1}, ~\text{COL1A2}, ~\ldots
+\end{bmatrix}
+\]
+
+which are human genes that encode core proteins for GABAergic neurotransmission, the primary chemical messaging system that slows down and calms brain activity. Then factor 1 could be interpreted as an \textbf{inhibitory-neuron-associated gene program}.
+
+Other factors might have high weights for another set of genes corresponding to different programs. 
+
+The key analogy here is
+
+\[
+\boxed{
+\text{basis image}
+\longleftrightarrow
+\text{gene-expression program}
+}
+\]
+
+\subsubsection{Encoding}
+
+In image NMF, the encoding tells you \textbf{how much of each basis image is present in a particular image}.
+
+Continuing with the previous example
+
+\[
+\text{face}_i
+\approx
+2.0(\text{eyes})
++
+0.8(\text{nose})
++
+1.3(\text{mouth})
+\]
+
+The encoding is
+
+\[
+H_i=(2.0,~0.8,~1.3)
+\]
+
+In transcriptomics, the same thing happens. Suppose NMF finds three gene programs:
+
+\[
+\begin{aligned}
+W_1 &= \text{neuronal program}\\
+W_2 &= \text{immune program}\\
+W_3 &= \text{vascular program}
+\end{aligned}
+\]
+
+For cell $i$, NMF might give
+
+\[
+H_i=(2.0,~0.1,~0.3)
+\]
+
+which can be read this as
+
+\begin{quote}
+\textit{Cell/sample $i$ has a strong contribution from the neuronal program, very little contribution from the immune program, and some contribution from the vascular program.}
+\end{quote}
+
+\[
+\boxed{
+\text{encoding}
+\longleftrightarrow
+\text{factor activity in a cell/sample}
+}
+\]
+
+\subsubsection{Final remarks}
+
+Image example:
+
+\[
+\boxed{
+\text{image}
+\approx
+\text{encoding}_1\times\text{basis image}_1
++
+\text{encoding}_2\times\text{basis image}_2
++\cdots
+}
+\]
+
+Genomic experiment:
+
+\[
+\boxed{
+\text{cell expression}
+\approx
+\text{activity}_1\times\text{gene program}_1
++
+\text{activity}_2\times\text{gene program}_2
++\cdots
+}
+\]
+
+Mathematically
+
+\[ 
+Y_{i \mu} \approx \sum_{\alpha = 1}^r W_{i \alpha} H_{\alpha \mu}
+\]
+
+where
+
+\begin{itemize}
+    \item $Y_{i\mu}$ = expression of gene $\mu$ in cell $i$;
+    \item $W_{i\alpha}$ = how strongly gene $i$ belongs to gene program $\alpha$;
+    \item $H_{\alpha \mu}$ = how active program $\alpha$ is in cell $\mu$.
+\end{itemize}
+
+\vspace{5mm}
+
+\textbf{One subtle difference}. NMF decomposes a face into
+\[
+\text{face}
+=
+\text{eyes} \times c_{eyes}
++
+\text{nose} \times c_{nose}
++
+\text{mouth} \times c_{mouth}
++
+\text{ears} \times c_{ears} 
++
+\cdots 
+\]
+
+In transcriptomics,
+\[
+\text{cell expression}
+=
+\text{(neuronal program)} \times c_{neuronal}
++
+\text{(immune program)} \times c_{immune}
++\cdots
+\]
+with different weights for each cell. The structure is the same, but we have to be careful with the analogy.\textbf{ A gene program is} not literally a biological ``part'' in exactly the same sense as an eye is a physical part of a face. Rather, it is a \textbf{positive component of the observed expression profile}.
+
+%\section{There is one subtle but important difference}
+%
+%This is where I would \textbf{not push the image analogy too far}.
+%
+%In image decomposition, a basis image has a literal spatial arrangement:
+%
+%\[
+%\boxed{\text{basis image}=\text{pattern across pixels}}
+%\]
+%
+%For example, the basis might contain a bright region corresponding to an eye.
+%
+%In ordinary transcriptomics, a factor is instead:
+%
+%\[
+%\boxed{\text{factor}=\text{pattern across genes}}
+%\]
+%
+%There is no intrinsic 2D arrangement of genes.
+%
+%So if we write
+%
+%\[
+%W_k =
+%(0.9,0.8,0.7,0.1,\ldots),
+%\]
+%
+%we are not looking at a little ``image'' of a gene-expression pattern. We are looking at a vector whose coordinates correspond to genes.
+%
+%This is why the terminology can become confusing.
+%
+%Calling $W_k$ a \textbf{basis image} is very intuitive for image NMF.
+%
+%Calling $W_k$ a \textbf{gene-expression program}, \textbf{factor}, or \textbf{gene loading vector} is more intuitive for transcriptomics.
+
+\newpage
+
+\section{Nonnegative Spatial Factorization}
+
+This section is based on the \textit{Nonnegative spatial factorization applied to spatial genomics} paper by F. W. Townes and B. E. Engelhardt, The goal here so to extract and highlight the key points, while avoiding deep-diving into optimization algorithms, loss functions to be minimized and so on. The original paper is obviously much more detailed when it comes to that.
+
+\subsection{Introducing spatial transcriptomics}
+
+\noindent Imagine two neighboring cells \textit{A} and \textit{B}, whose coordinates are very close. Biologically, it is often reasonable to expect their gene-expression patterns to be related. Ordinary NMF doesn't know that/makes no use of that information, i.e. \textit{for ordinary probabilistic NMF, the factor for cell A and the factor for cell B are essentially treated as independent draws}. 
+
+\noindent  The model knows
+\[
+Y_i = \text{expression profile at location }i
+\]
+\noindent  but it doesn't explicitly know that
+\[
+X_i \approx X_k
+\]
+\noindent means we should expect
+\[
+Y_i \text{ and } Y_k \text{ may be related}
+\]
+
+\noindent \textbf{Nonspatial models do not use the spatial coordinates $x_i$ when defining the prior on the latent factors.}
+
+NMF asks
+
+\begin{quote}
+\textit{Can I explain these expression vectors using a small number of nonnegative gene-expression programs?}
+\end{quote}
+
+In spatial transcriptomics, we additionally know \textit{where} each cell/location is. The question we pose ourselves is
+
+\begin{quote}
+\textit{\textbf{Should the encoding of a spatial location depend on where that location is?}}
+\end{quote}
+
+That is precisely the conceptual step from \textbf{NMF} to probablistic NMF and to \textbf{Nonnegative Spatial Factorization} (\textbf{NSF}).
+
+%\subsubsection{Non-use of spatial information}
+
+%\noindent Imagine two neighboring cells \textit{A} and \textit{B}, whose coordinates are very close. Biologically, it is often reasonable to expect their gene-expression patterns to be related. Ordinary NMF doesn't know that/makes no use of that information, i.e. \textit{for ordinary probabilistic NMF, the factor for cell A and the factor for cell B are essentially treated as independent draws}. 
+%
+%\noindent  The model knows
+%\[
+%Y_i = \text{expression at location }i
+%\]
+%\noindent  but it doesn't explicitly know that
+%\[
+%X_i \approx X_k
+%\]
+%\noindent means we should expect
+%\[
+%Y_i \text{ and } Y_k \text{ may be related}
+%\]
+%
+%\noindent \textbf{Nonspatial models do not use the spatial coordinates $x_i$ when defining the prior on the latent factors.}
+
+\subsection{Using spatial information}
+
+\noindent Suppose that we have a tissue sample like
+
+\[
+\begin{array}{cccc}
+A&A&A&A\\
+A&A&A&A\\
+A&A&B&B\\
+A&B&B&B
+\end{array}
+\]
+
+\noindent where A and B represent two different tissue environments. 
+
+\noindent We can expect a latent factor to vary smoothly over space, looking something like:
+
+\[
+\begin{array}{cccc}
+\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
+\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
+\blacksquare&\blacksquare&\square&\square\\
+\blacksquare&\square&\square&\square
+\end{array}
+\]
+
+\noindent \textit{If two locations are close together, their factor values should tend to be similar. If two locations are far apart, they may be less similar.} 
+
+\subsubsection{Gaussian processes}
+
+A Gaussian Process (GP), in the most compact definition ever, is essentially a probability distribution over functions. 
+
+Imagine drawing a function \textit{f(x)} that, for our specific case, is a smooth factor-activity function. A gaussian process gives us a probabilistic model for what kinds of functions $f(x)$ are plausible.
+
+GPs can encode the information
+
+\begin{quote}
+	\textit{nearby spatial locations should tend to have similar values of the latent factor}
+\end{quote}
+
+through the so called \textbf{kernel} or \textbf{kernel function \textit{k}}. Roughly, the kernel answers the question:
+
+\begin{quote}
+	\textit{``How strongly should the factor values at locations $x_i$ and $x_k$ be correlated?''}
+\end{quote}
+
+If $x_i$ and $x_k$ are close $k(x_i,x_k)$ is large, if they are far apart $k(x_i,x_k)$ is smaller. 
+
+Instead of estimating each factor independently for every cell, we are effectively saying that \textit{factor activity depends on spatial location}. 
+
+\noindent The paper on which this explanations is based on uses a Matérn kernel with smoothness parameter $3/2$. I'm still not sure deep diving into kernel functions is something I need to do.
+
+\subsubsection{NMF + GP = NSF}
+
+We can combine the two ideas.
+
+\textbf{NMF}: $\text{gene expression}
+\approx
+\text{factor activity}
+\times
+\text{gene-factor association}
+$
+
+\textbf{GP}: $
+\text{factor activity}
+=
+\text{a spatially correlated function}
+$
+
+\textbf{Nonnegative Spatial Factorization} (\textbf{NSF}) simply combines these. 
+
+%The authors write:
+%
+%\[
+%y_{ij}\sim\operatorname{Poi}(\nu_i\lambda_{ij})
+%\]
+%
+%with
+%
+%\[
+%\lambda_{ij}
+%=
+%\sum_{l=1}^{L}w_{jl}e^{f_{il}},
+%\]
+%
+%and
+%
+%\[
+%f_{il}=f_l(x_i)
+%\sim
+%GP(\mu_l(x_i),k_l(x_i,X)).
+%\]
+%
+%But let's translate that line by line.
+
+\subsubsection{Mathematical basis}
+
+In transcriptomics, the analysis results are expressed in form of observed \textbf{counts}. For example:
+
+\[
+Y_{i\mu}=17
+\]
+
+\noindent means 17 transcripts of gene $\mu$ were observed at location $i$.
+
+\noindent Counts are naturally modeled using distributions such as the Poisson or negative binomial, so we can write 
+
+\[
+Y_{i\mu}\sim\operatorname{Poisson}(\nu_i\lambda_{i\mu}).
+\]
+
+\noindent with
+
+\begin{itemize}
+	\item $y_{i\mu}$ = observed count
+	\item $\lambda_{i\mu}$ = underlying expected expression level
+	\item $\nu_i$ = size factor accounting for the fact that some locations simply have more total transcripts than others.
+\end{itemize}
+
+\noindent So far, nothing specifically spatial has happened. 
+
+\noindent The underlying expression level is what we are trying to model/describe. 
+
+\[
+\lambda_{i\mu}
+=
+\sum_{\alpha=1}^{r} W_{\mu \alpha} H_{\alpha \mu}
+\]
+
+We now make the assumption that the number of transcripts is the same for all locations, so that we can just revert to the common form
+
+\[ 
+Y_{i \mu} \approx \sum_{\alpha = 1}^r W_{i \alpha} H_{\alpha \mu}
+\]
+
+%In NMF, we are trying to get a model to descibe the expression level for gene \textit{i} at location $\mu$ directly  
+%take the expression level for gene \textit{i} at location $\mu$ that we derived above 
+
+
+%Now, we aim for the underlying expected expression level $\lambda_{i \mu}$ in a similar way
+%
+%\[
+%\lambda_{i\mu}
+%=
+%\sum_{\alpha=1}^{r} W_{\mu \alpha} H_{\alpha \mu}
+%\]
+
+and then modify it to take into account spatial features. We will arrive at 
+
+\[
+Y_{i \mu}
+=
+\sum_{\alpha = 1}^r W_{\mu \alpha}~  e^{f_{\alpha} (x_ \mu)}
+\]
+
+$W_{\mu \alpha}$ is exactly the same as before, and it is still related to how strongly is gene $\mu$ associated with factor $\alpha$. 
+
+The change is in the term that tells us how active is factor $\alpha$ at a certaing spatial location.
+
+\noindent There's one small thing we are missing. Gaussian processes have no positivity-related constraints by definition, and produce a real-valued quantity
+
+\[
+f_{\alpha} (x_ \mu) \in(-\infty,\infty).
+\]
+
+but we want factor activity to be \textbf{positive}. Exponentiation is hereby used to transform
+
+\[
+f_{\alpha} (x_ \mu) \in (-\infty, +\infty) \quad \rightarrow \quad e^{f_{\alpha} (x_ \mu)} \in (0, +\infty).
+\]
+
+so that the GP can model an unrestricted real-valued function $f_l(x)$ while the actual factor contribution $e^{f_l(x)}$ is always positive. The result is called an \textbf{exponentiated Gaussian process}. 
+
+ The exponential guarantees $e^{f_{il}}>0$, while $w_{jl}\geq0$ is a "standard" contraint from NFM. Therefore every term in
+
+\[
+Y_{i \mu}
+=
+\sum_{\alpha = 1}^r W_{\mu \alpha}~  e^{f_{\alpha} (x_ \mu)}
+\]
+is nonnegative, giving NSF its interpretable, parts-based structure while incorporating spatial information.
+
+\subsection{Practical example}
+
+Suppose there are \(N=12\) spatial locations and \(r=3\) factors. Let
+\[
+Y_{i\mu}
+\]
+denote the expression of gene \(i\) at spatial location \(\mu\).
+
+A typical factor, let's say \textbf{factor 1}, of the NSF outcome looks something like
+
+\boxed{
+\begin{minipage}{0.45\textwidth}
+	\centering Spatial pattern
+	\[
+	\begin{array}{cccc}
+	\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
+	\blacksquare&\blacksquare&\blacksquare&\square\\
+	\blacksquare&\blacksquare&\square&\square
+	\end{array}
+	\]
+\end{minipage}
+\begin{minipage}{0.45\textwidth}
+	\centering Genes
+	\[
+	\begin{array}{ll}
+	\text{Gene A}: & 0.9\\
+	\text{Gene B}: & 0.8\\
+	\text{Gene C}: & 0.7\\
+	\text{Gene D}: & 0.1
+	\end{array}
+	\]
+\end{minipage} 
+}
+\\ 
+
+%\vspace{2mm}
+
+and similarly for other factors.
+
+\subsubsection{NMF}
+
+%With the specified notation, NMF is
+\[
+Y_{i\mu}
+\approx
+\sum_{\alpha=1}^3
+W_{i\alpha}H_{\alpha\mu}
+\]
+
+For Factor 1, the example corresponds to
+\[
+W_{\cdot 1}
+=
+\begin{pmatrix}
+0.9\\
+0.8\\
+0.7\\
+0.1
+\end{pmatrix}
+\]
+where the entries correspond to Genes A--D, and
+\[
+H_{1\cdot}
+=
+(1,1,1,1,1,1,1,0,1,1,0,0)
+\]
+
+If we reshape \(H_{1\cdot}\) onto the \(3\times4\) tissue grid, we obtain
+\[
+\begin{pmatrix}
+1&1&1&1\\
+1&1&1&0\\
+1&1&0&0
+\end{pmatrix}
+\]
+
+The crucial point is that NMF treats the entries of \(H_{1\cdot}\) as coefficients indexed by \(\mu\). It does not know that, for example, locations \(1\) and \(2\) are neighbors while locations \(1\) and \(12\) are far apart.
+
+Consider the two vectors
+\[
+H_{1\cdot}^{(A)}
+=
+(1,1,1,1,1,1,1,0,1,1,0,0)
+\]
+and
+\[
+H_{1\cdot}^{(B)}
+=
+(1,0,1,1,0,1,1,0,1,1,1,0)
+\]
+
+They contain the same number of nonzero entries and, if the corresponding columns of \(Y\) are permuted in the same way, they give exactly the same NMF reconstruction error. NMF has no mechanism that prefers \(H^{(A)}\) because its nonzero entries form one spatially coherent region.
+
+More formally, for any permutation \(P\) of the spatial locations,
+\[
+Y\approx WH
+\]
+can be transformed into
+\[
+YP\approx W(HP)
+\]
+with exactly the same reconstruction error. Standard NMF is therefore invariant to permutations of the spatial locations. The spatial coordinates themselves do not enter the model.
+
+So, to NMF,
+\[
+\boxed{
+	(1,1,1,1,1,1,1,0,1,1,0,0)
+}
+\]
+and
+\[
+\boxed{
+	(1,0,1,1,0,1,1,0,1,1,1,0)
+}
+\]
+are just two possible coefficient vectors. Their spatial arrangement has no mathematical meaning to the factorization.
+
+\subsubsection{NSF}
+
+\[
+Y_{i\mu}
+=
+\sum_{\alpha=1}^3
+W_{\mu\alpha}~e^{f_{\alpha} (x_ \mu)}
+\]
+
+For \textbf{factor 1}, the corresponding spatial contribution is
+\[
+W_{\mu1}~e^{f_{1}(x_\mu)}.
+\]
+
+Here the factor is not simply an arbitrary vector of coefficients attached to the 12 locations. Its value is generated through the spatially indexed latent function
+\[
+f_{1}(x_\mu)
+\]
+
+For the example, we could obtain a factor whose spatial expression is approximately
+\[
+\begin{pmatrix}
+1&1&1&1\\
+1&1&1&0\\
+1&1&0&0
+\end{pmatrix}
+\]
+
+Thus the factor can be represented as
+\[
+\begin{array}{cccc}
+\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
+\blacksquare&\blacksquare&\blacksquare&\square\\
+\blacksquare&\blacksquare&\square&\square
+\end{array}
+\]
+together with its gene-associated weights.
+
+The distinction is that NSF has access to the coordinates \(x_\mu\), so the values
+\[
+f_1(x_1),~f_1(x_2),~\ldots,~f_1(x_{12})
+\]
+are values of a spatial latent function. Consequently, the model can distinguish between spatial configurations that NMF regards as equivalent.
+
+For example,
+\[
+f_1(x_\mu)
+\quad\longrightarrow\quad
+\begin{pmatrix}
+1&1&1&1\\
+1&1&1&0\\
+1&1&0&0
+\end{pmatrix}
+\]
+represents a spatially coherent region, whereas
+\[
+f_1(x_\mu)
+\quad\longrightarrow\quad
+\begin{pmatrix}
+1&0&1&0\\
+1&1&0&1\\
+0&1&1&1
+\end{pmatrix}
+\]
+represents a spatially fragmented pattern.
+
+Those two configurations are not equivalent under the NSF model because the spatial coordinates \(x_\mu\) enter the latent function.
+
+The cleanest statement is
+\[
+\boxed{
+	\begin{array}{ll}
+	\text{NMF:}
+	&
+	H_{1\cdot}=(h_{11},\ldots,h_{1N})
+	\text{ is an arbitrary vector indexed by locations}
+	\\[2mm]
+	\text{NSF:}
+	&
+	e^{f_1(x_\mu)}
+	\text{ is generated by a latent function of spatial location }x_\mu
+	\end{array}
+}
+\]
+
+Under NMF, permuting the spatial locations merely permutes the entries of \(H\) and does not change the mathematical status of the solution. 
+
+Under NSF, where those values occur in space is part of the model itself.
+
+This is the sense in which NSF can distinguish a coherent pattern such as
+\[
+\begin{array}{cccc}
+\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
+\blacksquare&\blacksquare&\blacksquare&\square\\
+\blacksquare&\blacksquare&\square&\square
+\end{array}
+\]
+from a spatially scrambled pattern with the same marginal factor values.
+
+
+%Suppose NSF discovers $r=3$ factors. A typical outcome looks something like:
+%
+%\subsection*{Factor 1}
+%
+%\begin{minipage}{0.45\textwidth}
+%	\centering Spatial pattern
+%	\[
+%	\begin{array}{cccc}
+%	\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
+%	\blacksquare&\blacksquare&\blacksquare&\square\\
+%	\blacksquare&\blacksquare&\square&\square
+%	\end{array}
+%	\]
+%\end{minipage}
+%\begin{minipage}{0.45\textwidth}
+%	\centering Genes
+%	\[
+%	\begin{array}{ll}
+%	\text{Gene A}: & 0.9\\
+%	\text{Gene B}: & 0.8\\
+%	\text{Gene C}: & 0.7\\
+%	\text{Gene D}: & 0.1
+%	\end{array}
+%	\]
+%\end{minipage}
+%
+%\subsection*{Factor 2}
+%
+%\begin{minipage}{0.45\textwidth}
+%	\centering Spatial pattern
+%	\[
+%	\begin{array}{cccc}
+%	\square&\square&\square&\blacksquare\\
+%	\square&\square&\blacksquare&\blacksquare\\
+%	\square&\blacksquare&\blacksquare&\blacksquare
+%	\end{array}
+%	\]
+%\end{minipage}
+%\begin{minipage}{0.45\textwidth}
+%	\centering Genes
+%	\[
+%	\begin{array}{ll}
+%	\text{Gene A}: & 0.0\\
+%	\text{Gene B}: & 0.1\\
+%	\text{Gene C}: & 0.2\\
+%	\text{Gene D}: & 0.9
+%	\end{array}
+%	\]
+%\end{minipage}
+%
+%\subsection*{Factor 3}
+%
+%\begin{minipage}{0.45\textwidth}
+%	\centering Spatial pattern
+%	\[
+%	\begin{array}{cccc}
+%	\square&\square&\blacksquare&\square\\
+%	\square&\square&\blacksquare&\square\\
+%	\square&\square&\blacksquare&\square
+%	\end{array}
+%	\]
+%\end{minipage}
+%\begin{minipage}{0.45\textwidth}
+%	\centering Genes
+%	\[
+%	\begin{array}{ll}
+%	\text{Gene A}: & 0.2\\
+%	\text{Gene B}: & 0.8\\
+%	\text{Gene C}: & 0.0\\
+%	\text{Gene D}: & 0.3
+%	\end{array}
+%	\]
+%\end{minipage} \\ \\
+%
+%\noindent The model has therefore simultaneously discovered \textbf{spatial patterns} (where factors occur) and \textbf{gene associations} (which genes characterize those factors).
+
+
+\subsection{Hybrid Nonnegative Spatial Factorization}
+
+There is one last conceptual step we need to do. \textbf{Not every source of variation in gene expression is spatial}, nor two cells being neighbours implies similar gene expression between the two. This is the case, for example, of two neighboring cells whose gene expression is different because they are different cell types. Their difference will likely not be smoothly varying with position, as modelled by a GP. 
+
+\noindent\textbf{Hybrid Nonnegative Spatial Factorization} (\textbf{NSFH}) allows some factors to be spatial, others to be non spatial. Being $T$ the number of spatial factors and $L-T$ the number of nonspatial factors. full NSF is recovered when all factors are spatial ($T=L$), while probabilistic NMF is recovered when none are spatial ($T=0$).
+
+
+\section{Dimension-scalable Single-cell Perturbation Integration Network}
+
+This section is based on the "\textit{A guide to D-SPIN: constructing regulatory network models from single-cell RNA-seq perturbation data}" paper by J. Jiang and M. Thomson, and on their prior works regarding D-SPIN.
+
+D-SPIN (Dimension-scalable Single-cell Perturbation Integration Network) is a framework for learning probabilistic regulatory-network models from single-cell RNA-seq data collected across many perturbation conditions. Its central idea is to move from a representation of transcriptional states to a probabilistic model of how those states interact. 
+
+A natural starting point is non-negative matrix factorization (NMF), which decomposes the gene-expression matrix into latent components that can be interpreted as gene programs and their activities across cells. D-SPIN builds on this principle using orthogonal non-negative matrix factorization (oNMF) to identify positive gene programs that provide a compact representation of the expression landscape. The purpose of this factorization is therefore not yet to infer regulatory interactions, but to define a set of biologically interpretable variables on which such interactions can subsequently be modeled. 
+
+%Repeated factorizations can be combined into consensus programs, reducing the dependence of the inferred programs on the initialization of the factorization. For each cell, the resulting program activities summarize which transcriptional programs are active and provide a lower-dimensional description of the original gene-expression profile. 
+
+D-SPIN then takes a conceptual step beyond NMF by treating gene programs as nodes in a probabilistic graphical model. Rather than asking only which programs are active in a given cell, it asks whether the activity of one program is statistically associated with the activity of another across the population of cells. 
+%These dependencies are represented by interaction parameters in a spin-network or Markov random field, where positive interactions favor coordinated program states and negative interactions favor opposing states.
+The distinction between program activity and program interaction is fundamental: the former describes the state of an individual cell, whereas the latter describes statistical dependencies between components across cells. 
+
+Perturbation conditions are incorporated into the same framework so that multiple experimental perturbations can be analyzed relative to a shared underlying interaction structure. In this formulation, perturbations act as condition-specific inputs that modify the tendency of particular programs to become active rather than requiring an entirely independent network to be inferred for every condition. This allows D-SPIN to integrate information from many perturbation experiments while maintaining a common representation of the regulatory system. 
+
+The resulting model consequently connects three levels of description: positive gene programs obtained from matrix factorization, their activity in individual cells, and the interactions that statistically couple their states. The transition from NMF to D-SPIN can therefore be explained as a transition from dimensionality reduction to probabilistic network inference: NMF provides the components with which transcriptional states are represented, whereas D-SPIN models how those components interact and respond to perturbations. 
+
+\subsection{Basic architecture of D-SPIN}
+
+\noindent A schematic way of the principles behind D-SPIN is
+\[
+\boxed{
+	\text{genes}
+	\longrightarrow
+	\text{gene programs}
+	\longrightarrow
+	\text{program interaction network}
+	\longrightarrow
+	\text{perturbation response}
+}
+\]
+
+\noindent More explicitly, we can think of four objects:
+
+\begin{align*}
+W &: \text{gene-program composition}\\
+H &: \text{program activities across cells}\\
+J &: \text{interactions between programs}\\
+B &: \text{effects of perturbations on the network}
+\end{align*}
+
+\textit{W} and \textit{H} make up the first layer (a factorization), while \textit{J} and \textit{B} constitute a probabilistic model for the program states.
+
+\subsection{Step 1: oNMF}
+
+The first layer finds positive gene programs that can constitute a basis for the observed expression patterns. NMF is used
+\[
+Y \approx HW
+\qquad \qquad \qquad \qquad 
+Y \in \mathbb{R}_{\geq 0}^{n\times m}
+\qquad 
+H\in\mathbb{R}_{\geq0}^{n\times r}
+\qquad
+W\in\mathbb{R}_{\geq0}^{r\times m}
+\]
+
+with 
+\begin{align*}
+n &= \text{number of genes} \\
+m &= \text{number of cells/samples} \\
+r &= \text{number of gene programs} 
+\end{align*}
+
+D-SPIN imposes an additional orthogonality constraint, resulting in the so-called \textbf{orthogonal Nonnegative Matrix Factorization} (\textbf{oNMF}). The additional restraint is applied to the activation/encoding matrix \textit{H}. Here, the concept of matrix orthogonality, which is well-defined in the context of square matrices, is used in a "broader" definition for non-square matrices
+\[
+H^T H = \identity_r
+\]
+
+Without getting into details, orthogonality encourages different programs to be separated rather than repeatedly explaining the same expression variation.
+
+This is a modeling choice rather than a biological law. In real biology, the same gene can participate in multiple processes. Therefore, the non-overlap imposed by an orthogonal decomposition should be regarded as an interpretability constraint.
+
+
+\subsection{Step 2: From gene programs to program networks}
+
+Once the programs have been identified, each cell can be represented in a much smaller state space. Instead of \textit{n} of gene-expression variables
+\[
+G_1,~G_2,~\ldots,~G_n
+\]
+
+we have a reduced number of programs \textit{r}
+\[
+P_1,~P_2,~\ldots,~P_r
+\]
+
+For a particular cell $i$, let
+\[
+\bm{s^i}
+=
+(s_1^{i},~\ldots,~s_k^{i})
+\]
+
+denote its program-level state (encoding).
+
+At this point, an important conceptual change occurs. NMF asks:
+
+\begin{quote}
+	\textit{How much of each program is present?}
+\end{quote}
+
+D-SPIN then asks:
+
+\begin{quote}
+	\textit{Which combinations of program states are statistically favored?}
+\end{quote}
+
+The second question is a network question. 
+
+\subsubsection{Networks}
+
+Suppose three programs have states $s_a$, $s_b$, and $s_c$. Imagine that, across a number of samples, states $s_a$ and $s_b$ are positively correlated
+\[
+\bm{s}^{1}
+=
+(s_a^{1},~s_b^{1},~s_c^{1},~\ldots,~s_k^{1})
+\]
+\[
+\bm{s}^{2}
+=
+(s_a^{2},~s_b^{2},~s_c^{2},~\ldots,~s_k^{2})
+\]
+
+By correlation measure alone, we can not distinguish the three cases
+\begin{align*}
+a \rightarrow b &= \text{program "a" activates program "b"} \\
+b \rightarrow a &= \text{program "b" activates program "a"} \\
+a \leftarrow c \rightarrow b &= \text{program "c" activates both programs "a" and "b"} 
+\end{align*}
+
+Conditional-dependence model attempt to ask a more refined question
+\begin{quote}
+\textit{Does the relationship between $A$ and $B$ remain after accounting for	the other variables?}
+\end{quote}
+
+%D-SPIN constructs a probabilistic graphical model in which such
+%dependencies can be represented explicitly.
+
+\subsection{Step 3. Programs interaction networks}
+
+D-SPIN uses a condition-dependent spin network, a particular type of Markov random field. The terminology comes from statistical physics.
+
+Imagine that every gene or gene program is represented by a variable describing its state. The entire cell is then a configuration
+
+\[
+\bm{s}=(s_1,\ldots,s_K).
+\]
+The model assigns a probability to every possible configuration. Borrowing from statistical mechanics, each $s_i$ is the state of one microscopic degree of freedom, and the entire vector $\bm{s}$ is therefore a configuration or microstate.
+
+\subsubsection{Spin networks in statistical mechanics}
+
+In equilibrium statistical mechanics, the probability of observing a microscopic configuration is given by the Boltzmann distribution
+
+\[p(\bm{s}) = \frac{1}{Z} e^{-\beta E(\bm{s})}\]
+where $E(\bm{s})$ is the \textit{energy of configuration}, \textbf{\textit{s}}, $\beta = 1/(k_B T)$ and $Z$ is the so-called partition function
+\[ Z = \sum_{\bm{s}} e^{-\beta E(\bm{s})}\]
+
+The crucial part is the definition of the energy of a single state. Without getting into details, the energy for a system of spins immersed in an external field is 
+
+\[ 
+-\beta E(\bm{s}) = 
+\sum_i h_i s_i
++
+\sum_{i<j}J_{ij}s_is_j
+ \]
+where $s_i$ can only assume the two opposite values $\pm 1$.
+
+The term $h_i s_i$ describes the single-spint interaction with an external field (usually a magnetic field, when we talk abouts spins). Suppose $h_i > 0$. Then:
+\[ h_i (+1) = +h_i \qquad \qquad \qquad h_i (-1) = -h_i \]
+%Since larger values of the exponent correspond to higher probability, $h_i > 0 $ makes $s_i =+1$ more likely.
+Because the statistical-mechanical energy contains a minus sign, the $s_i = +1$ state has lower energy. We can can think of $h_i$ as a local preference for the spin in the presence of an external field.
+
+
+The term $J_{ij} s_i s_j$ is a cross-interaction term between spins. The product $s_i s_j$ tells us whether two spins are aligned:
+\[
+s_i s_j =
+\begin{cases}
++1, & s_i = s_j\\
+-1, & s_i \neq s_j
+\end{cases}
+\]
+
+Therefore, the sign of $J_{ij}$ determines what the system wants the two spins to do.
+
+If
+\[
+J_{ij} > 0
+\]
+then the exponent is larger when $s_i = s_j$. Thus, the interaction favors {alignment}.
+
+If
+\[
+J_{ij} < 0
+\]
+then the exponent is larger when $s_i \neq s_j$. Thus, the interaction favors {anti-alignment}.
+\[
+\boxed{
+	J_{ij} > 0: \text{spins want to be parallel}
+}
+\qquad \qquad 
+\boxed{
+	J_{ij} < 0: \text{spins want to be antiparallel}
+}
+\]
+
+%\[
+%\boxed{
+%	J_{ij} > 0:\quad \text{spins want to agree}
+%}
+%\]
+%
+%\[\boxed{
+%	J_{ij} < 0:\quad \text{spins want to disagree}
+%}
+%\]
+% 
+%and consequently the partition function becomes
+%\[
+%Z
+%=
+%\sum_{\bm{s}}
+%\exp
+%\left[
+%\sum_i h_i s_i
+%+
+%\sum_{i<j}J_{ij}s_is_j
+%\right]
+%\]
+
+\subsubsection{Program networks in transcriptomics}
+
+When moving from spin systems to transcriptomics, we recycle the energy definition 
+
+\[ 
+-\beta E(\bm{s}) = 
+\sum_i h_i s_i
++
+\sum_{i<j}J_{ij}s_is_j
+\]
+but we have to be aware of what changes both in limits and interpretation.
+
+The limits-related difference here is that spin now becomes something that describes the activity or expression level of a gene programs in a given cell, and it not limited in its values like in the statistical mechanics framework
+\[ \underset{\text{spin network}}{s_i = \pm 1} \qquad \longrightarrow \qquad \underset{\text{programm network}}{s_i \in \mathbb{R}_+}\]
+The term 
+$\boxed{h_i s_i}$
+now relates to single-prorgram activity tendency, while the cross-term 
+$\boxed{J_{ij} s_i s_j}$
+says that the state of program $i$ affects the preference for the state of program $j$, describing both coordinated activity between two gene programs or their antagonistic relationship.
+
+%The sign and magnitude of $J_{ij}$ describe the character and strength of the statistical interaction. It is worth stressing that a negative $J_{ij}$ should not automatically be read as a strict causal relationship: the probabilistic statistical approach is only describing dependencies in the observed distribution. Any claim on cause-effect relationshiop must be supported by other proofs.
+
+In the transcriptomic setting, the variable ($s_i$) is not a binary spin. Instead, it represents the activity of gene program (\textit{i}) in a given cell, as inferred by oNMF in the specific case of D-SPIN. Consequently,
+\[
+s_i \in \mathbb{R}_+
+\]
+meaning that a program can have different degrees of activity, but its activity score is non-negative.
+
+This difference is important when interpreting the interaction term. In the spin model, ($s_i s_j$) can take both positive and negative values because each spin can be either (+1) or (-1). The sign of ($J_{ij}$) can therefore be interpreted directly in terms of whether two spins prefer to align or anti-align. This interpretation does not carry over directly to transcriptomic program activities, since
+\[
+s_i \geq 0\quad s_j \geq 0 \quad \implies \quad s_i s_j \geq 0 \quad \forall i,j
+\]
+Here, ($J_{ij}$) instead determines how the simultaneous activity of two programs contributes to the statistical preference for a cellular state. For example, if
+\[
+J_{ij}>0,
+\]
+then states in which both programs have high activity receive a larger contribution to the exponent
+\[
+J_{ij}s_i s_j,
+\]
+and the model therefore captures a tendency for the two programs to be active together. In this sense, a positive interaction is naturally associated with co-activity or coordination between the two programs.
+
+Conversely, if
+\[
+J_{ij}<0,
+\]
+then simultaneous high activity of the two programs contributes negatively to the exponent. The model therefore penalizes states in which both programs are strongly active at the same time, capturing a statistical tendency toward mutual exclusion or antagonistic activity.
+
+Thus, for non-negative transcriptomic program activities, it is more appropriate to interpret
+\[
+\boxed{
+	J_{ij}>0:\quad \text{co-activation is statistically favored}
+}
+\]
+\[
+\boxed{
+	J_{ij}<0:\quad \text{simultaneous activation is statistically disfavored}
+}
+\]
+rather than using the language of parallel and antiparallel spins.
+
+The magnitude ($\lvert J_{ij}\rvert$) describes the strength of this interaction within the model. Importantly, this interpretation concerns the joint statistical distribution of program activities. A positive ($J_{ij}$) does not by itself imply that one program activates the other, just as a negative ($J_{ij}$) does not establish that one program represses the other. The inferred interaction describes a dependency in the observed cellular states; causal interpretation requires independent biological or experimental evidence.
+
+\subsection{Step 4. Introducing perturbations}
+
+\subsubsection{Spin network}
+
+Let's go back to spins and statistical mechanics. We have our spin system and we now add an external perturbation. In statistical mechanics, a particularly simple perturbation is an additional external field acting on the spins.
+Suppose we apply a field $b_i$ to spin $i$. The field contributes an additional term to the energy of the micro-state
+\[
+-\beta E(\bm s \mid \bm s)  = 
+\sum_i h_i s_i
++
+\sum_{i<j}J_{ij}s_is_j
++
+\sum_i b_i s_i
+\]
+where we left the perturbation interact with different magnitude on each spin by letting $b_i$ depend on $i$.
+
+The perturbed distribution becomes
+\[
+p(\bm{s}\mid \bm{b})
+=
+\frac{1}{Z_{\bm{b}}}
+\exp
+\left[
+\sum_i h_i s_i
++
+\sum_{i<j}J_{ij}s_is_j
++
+\sum_i b_i s_i
+\right] = 
+\frac{1}{Z_{\bm{b}}}
+\exp
+\left[
+\sum_i (h_i+b_i)s_i
++
+\sum_{i<j}J_{ij}s_is_j
+\right]
+\]
+where we higlihted the fact that both the energy and the probability of state $\bm s$ are affected by the perturbation $\bm b$.
+
+The perturbation does not change the interactions $J_{ij}$. Instead, it changes the external field experienced by the each spin
+\[
+h_i
+\longrightarrow
+h_i+b_i
+\]
+
+\subsubsection{Transcriptomics}
+
+In transcriptomics,
+
+\[
+\bm{s}
+=
+(s_1,\ldots,s_K)
+\]
+
+represents the state of the entire cell. The unperturbed model
+\[
+p(\bm{s})
+\]
+describes the distribution of cellular states under some baseline condition.
+
+Now imagine experimentally perturbing the cell. For example, the perturbation could be a genetic knockout, activation of a transcription factor, inhibition of a signaling pathway, addition of a drug, or a change in the extracellular environment.
+
+We therefore want to describe a conditional distribution
+
+\[
+p(\bm{s}\mid q) 
+\]
+
+where $q$ denotes the perturbation. The simplest way to represent perturbation $q$ is to say that it produces an additional effective field on each gene or gene program $i$. We denote this field by
+\[
+b_{iq} =
+\text{effect of perturbation }q\text{ on program }i
+\]
+The perturbed distribution is consequently
+\[
+	p(\bm{s}\mid q)
+	=
+	\frac{1}{Z_q}
+	\exp
+	\left[
+	\sum_i h_i s_i
+	+
+	\sum_{i<j}J_{ij}s_is_j
+	+
+	\sum_i b_{iq}s_i
+	\right]
+\]
+
+
+The sign of $b_{kq}$ determines the direct effect of perturbation $q$ on variable $s_k$:
+
+\[
+b_{kq}
+\begin{cases}
+>0 & \Rightarrow \text{favors larger }s_k\\
+<0 & \Rightarrow \text{favors smaller }s_k
+\end{cases}
+\]
+Remarkably, even when $b_{iq}=0$, the state $s_i$ can still respond through the pairwise couplings $J_{ij}$.
+
+This, the introduction of perturbations can be summarized as
+\[
+\boxed{
+	\text{perturbation}
+	\;\rightarrow\;
+	b_{iq}\text{ (direct)}
+	\;\rightarrow\;
+	J_{ij}\text{ (network-mediated)}
+	\;\rightarrow\;
+	\text{cellular response}
+}
+\]
+
+%\section*{6. Interpreting $b_{iq}$}
+%
+%Suppose that
+%
+%\[
+%b_{kq}>0.
+%\]
+%
+%Then perturbation $q$ directly favors larger values of $s_k$.
+%
+%Conversely, if
+%
+%\[
+%b_{kq}<0,
+%\]
+%
+%then it favors smaller values of $s_k$.
+%
+%Importantly, even if
+%
+%\[
+%b_{iq}=0,
+%\]
+%
+%the state $s_i$ can still change in response to perturbation $q$ because of the pairwise couplings $J_{ij}$.
+%
+%This gives the following conceptual decomposition:
+%
+%\[
+%\boxed{
+%	\text{perturbation}
+%	\rightarrow
+%	\text{direct effects }b_{iq}
+%	\rightarrow
+%	\text{network-mediated effects }J_{ij}
+%	\rightarrow
+%	\text{new cellular state distribution}.
+%}
+%\]
+
+The parameter $b_{iq}$ should be interpreted as the way in which perturbation $q$ enters the model, rather than as a direct measurement of the biological effect of $q$ on gene $i$. In this sense, $b_{iq}$ represents an{effective perturbation field}: it describes the direct influence of the intervention on variable $s_i$. By contrast, the pairwise couplings $J_{ij}$ describe how changes in one variable can propagate through the system. The resulting cellular response therefore emerges from the combination of the perturbation fields and the underlying interaction network.
+
+This distinction is particularly useful when studying causality. By comparing the distribution of cellular states before and after a controlled perturbation, one can ask whether changing one component of the system produces a systematic change in another. \\
+
+\textbf{Example 1.} Consider three gene programs,
+\[
+s_1=\text{interferon}
+\qquad
+s_2=\text{inflammation}
+\qquad
+s_3=\text{cell cycle}
+\]
+Suppose the baseline model contains a positive coupling between the interferon and inflammation programs,
+\[
+J_{12}>0
+\]
+
+This means that the model favors cellular configurations in which these two programs tend to be active together. Now consider a perturbation $q$ that activates the interferon pathway. Suppose
+\[
+b_{1q}>0.
+\]
+The perturbation directly pushes the interferon program toward larger values of $s_1$. Because
+\[
+J_{12}>0,
+\]
+the increase in $s_1$ can also make configurations with larger $s_2$ more probable. Thus, one could observe
+\[
+\Delta s_1>0
+\]
+as a direct response and
+\[
+\Delta s_2>0
+\]
+as a network-mediated response. The model is therefore not simply saying that perturbation $q$ changes gene program $1$. Rather, it says that perturbation $q$ changes the probability landscape of the entire cellular state through both its direct effects $b_{iq}$ and the existing interactions $J_{ij}$. \\
+
+
+\textbf{Example 2.} Consider two gene programs, $s_A$ and $s_B$. In observational data, we may find that they are positively associated
+\[
+\langle s_A s_B\rangle
+-
+\langle s_A\rangle\langle s_B\rangle
+>0
+\]
+However, this association alone does not establish that $A$ regulates $B$. The two programs could, for example, be responding to a common upstream regulator.
+
+Now suppose we experimentally perturb program $A$. This can be represented by a perturbation field $b_{Aq}$, while initially setting
+\[
+b_{Bq}=0
+\]
+If the perturbation produces a systematic change in the distribution of $s_B$,
+\[
+p(s_B\mid q)\neq p(s_B)
+\]
+then changing $A$ has an effect on $B$. In the simplest interpretation, the causal chain is
+\[
+A
+\;\xrightarrow{\;q\;}\;
+B
+\]
+The pairwise model provides a mechanism for representing this response through the interaction network
+\[
+A
+\;\xrightarrow{\;b_{Aq}\;}
+\text{network response}
+\;\xrightarrow{\;J_{AB},\,J_{AC},\,\ldots\;}
+B
+\]
+Thus, perturbations provide information that is not available from observational correlations alone: they actively change one part of the system and allow us to measure how the rest of the system responds. A controlled perturbation therefore helps distinguish \textit{association} from \textit{response to intervention}, which is the key step toward identifying causal relationships. 
+
+\end{document}
