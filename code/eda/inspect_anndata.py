@@ -1,24 +1,23 @@
 import numpy as np
-# import pandas as pd
 import scanpy as sc
 
-def inspect_annotated_data(file_path):
+
+def inspect_annotated_data(adata):
     """
     Inspect the structure, expression matrix, metadata, and basic quality
     metrics of an AnnData file.
 
     Parameters
     ----------
-    file_path : str
-        Path to the .h5ad file to inspect.
+    adata : anndata.AnnData
+        Annotated data matrix containing the single-cell expression data,
+        typically loaded from an `.h5ad` file using `scanpy.read_h5ad()`.
 
     Notes
     -----
     This function performs inspection only. It does not modify the AnnData
     object or apply any filtering, normalization, or other preprocessing.
     """
-        
-    adata = sc.read_h5ad(file_path)
 
     print("=== DATASET ===")
     print(f"shape: {adata.shape}")
