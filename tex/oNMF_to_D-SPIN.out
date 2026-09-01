@@ -27,3 +27,11 @@
 \BOOKMARK [2][-]{subsection.3.5}{Step 4. Introducing perturbations}{section.3}% 27
 \BOOKMARK [3][-]{subsubsection.3.5.1}{Spin network}{subsection.3.5}% 28
 \BOOKMARK [3][-]{subsubsection.3.5.2}{Transcriptomics}{subsection.3.5}% 29
+\BOOKMARK [1][-]{section.4}{Introduction to the thesis use-case}{}% 30
+\BOOKMARK [2][-]{subsection.4.1}{Perturb-seq and single-cell genetic perturbation profiling}{section.4}% 31
+\BOOKMARK [2][-]{subsection.4.2}{The Norman et al. Perturb-seq experiment}{section.4}% 32
+\BOOKMARK [2][-]{subsection.4.3}{Cutting corners}{section.4}% 33
+\BOOKMARK [2][-]{subsection.4.4}{Application of D-SPIN to the Norman dataset}{section.4}% 34
+\BOOKMARK [1][-]{section.5}{Dataset description}{}% 35
+\BOOKMARK [1][-]{section.6}{Analysis pipeline}{}% 36
+\BOOKMARK [1][-]{section.7}{Results}{}% 37

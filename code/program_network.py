@@ -3,6 +3,7 @@
 ####################################################################################################
 
 # Python libs
+import pandas as pd
 import scanpy as sc
 
 # Local functions
@@ -55,3 +56,29 @@ validate_onmf(model)
 from program_analysis.get_top_genes import get_top_genes, get_gene_labels
 get_top_genes(adata, model, n=10)
 get_gene_labels(adata, model, n=10)
+
+# 4. Correlation between programs
+from program_analysis.get_correlation import get_correlation_matrix, plot_correlation_matrix, get_highest_correlation_duplets
+plot_correlation_matrix(model)
+get_highest_correlation_duplets(model)
+get_highest_correlation_duplets(model, direction="up")
+
+# 5. Full gene list
+from program_analysis.get_full_gene_list import get_full_gene_list
+prg = get_full_gene_list(adata, model) # Program-ranked-genes
+
+# 6. Enrichment analysis
+from program_analysis.enrich import ora_enrich_programs, summarize_ora_results
+ora = ora_enrich_programs(adata, prg)
+ora_summary = summarize_ora_results(ora)
+
+# 7. Relative responses
+from program_analysis.relative_responses import get_ranked_responses, check_reciprocal_responses    
+relative_responses = pd.DataFrame(
+    model.relative_responses,
+    index=[f"Program_{i}" for i in range(1, model.relative_responses.shape[0] + 1)],
+    columns=model.sample_list
+)
+top_responses = get_ranked_responses(relative_responses, ascending=False, n=5)
+bottom_responses = get_ranked_responses(relative_responses, ascending=True, n=5)
+reciprocal_responses = check_reciprocal_responses(relative_responses)

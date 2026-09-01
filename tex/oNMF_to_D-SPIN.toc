@@ -27,3 +27,11 @@
 \contentsline {subsection}{\numberline {3.5}Step 4. Introducing perturbations}{17}{subsection.3.5}%
 \contentsline {subsubsection}{\numberline {3.5.1}Spin network}{17}{subsubsection.3.5.1}%
 \contentsline {subsubsection}{\numberline {3.5.2}Transcriptomics}{17}{subsubsection.3.5.2}%
+\contentsline {section}{\numberline {4}Introduction to the thesis use-case}{20}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Perturb-seq and single-cell genetic perturbation profiling}{20}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}The Norman et al.\ Perturb-seq experiment}{20}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Cutting corners}{21}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Application of D-SPIN to the Norman dataset}{22}{subsection.4.4}%
+\contentsline {section}{\numberline {5}Dataset description}{23}{section.5}%
+\contentsline {section}{\numberline {6}Analysis pipeline}{23}{section.6}%
+\contentsline {section}{\numberline {7}Results}{23}{section.7}%

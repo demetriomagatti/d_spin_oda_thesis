@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2024.4.8)  27 AUG 2026 12:37
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2024.4.8)  31 AUG 2026 16:10
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -571,23 +571,86 @@ Underfull \hbox (badness 10000) in paragraph at lines 1463--1465
 
  []
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1500.
 [19]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 1500.
+
+LaTeX Warning: Citation `dixit2016perturbseq' on page 20 undefined on input lin
+e 1518.
+
+
+LaTeX Warning: Citation `dixit2016perturbseq' on page 20 undefined on input lin
+e 1528.
+
+
+LaTeX Warning: Citation `norman2019' on page 20 undefined on input line 1553.
+
+[20]
+
+LaTeX Warning: Citation `norman2019' on page 21 undefined on input line 1577.
+
+
+LaTeX Warning: Citation `norman2019' on page 21 undefined on input line 1588.
+
+
+LaTeX Warning: Citation `norman2019' on page 21 undefined on input line 1598.
+
+
+LaTeX Warning: Citation `weinberger2024figshare' on page 21 undefined on input 
+line 1608.
+
+
+LaTeX Warning: Citation `weinberger2024' on page 21 undefined on input line 161
+1.
+
+
+LaTeX Warning: Citation `norman2019geo' on page 21 undefined on input line 1613
+.
+
+
+LaTeX Warning: Citation `weinberger2024figshare' on page 21 undefined on input 
+line 1622.
+
+
+LaTeX Warning: Citation `yu2025' on page 21 undefined on input line 1628.
+
+[21]
+
+LaTeX Warning: Citation `weinberger2024' on page 22 undefined on input line 165
+0.
+
+
+LaTeX Warning: Citation `jiang2025guide' on page 22 undefined on input line 172
+0.
+
+
+LaTeX Warning: Citation `jiang2023dspin' on page 22 undefined on input line 172
+6.
+
+
+LaTeX Warning: Citation `jiang2023dspin' on page 22 undefined on input line 174
+8.
+
+[22]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1768.
+ [23]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1768.
  (./oNMF_to_D-SPIN.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1500.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1500.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1768.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1768.
 
 Package rerunfilecheck Info: File `oNMF_to_D-SPIN.out' has not changed.
-(rerunfilecheck)             Checksum: C031D2DFB7B4560C481064C03694D958;2223.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1500.
+(rerunfilecheck)             Checksum: FFA677DB6513B24C1F9226A7B9B86716;2801.
+
+
+LaTeX Warning: There were undefined references.
+
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1768.
  ) 
 Here is how much of TeX's memory you used:
- 10664 strings out of 481239
- 159903 string characters out of 5920378
- 477362 words of memory out of 5000000
- 25583 multiletter control sequences out of 15000+600000
- 547774 words of font info for 120 fonts, out of 8000000 for 9000
+ 10686 strings out of 481239
+ 160145 string characters out of 5920378
+ 478365 words of memory out of 5000000
+ 25591 multiletter control sequences out of 15000+600000
+ 547825 words of font info for 121 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  34i,12n,42p,1203b,409s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}</usr/share/texli
@@ -610,10 +673,10 @@ t/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-dist/fonts
 /public/amsfonts/symbols/msam10.pfb></usr/share/texlive/texmf-dist/fonts/type1/
 public/amsfonts/symbols/msbm10.pfb></usr/share/texmf/fonts/type1/public/cm-supe
 r/sfrm1095.pfb>
-Output written on oNMF_to_D-SPIN.pdf (21 pages, 279177 bytes).
+Output written on oNMF_to_D-SPIN.pdf (25 pages, 295630 bytes).
 PDF statistics:
- 335 PDF objects out of 1000 (max. 8388607)
- 289 compressed objects within 3 object streams
- 49 named destinations out of 1000 (max. 500000)
- 12009 words of extra memory for PDF output out of 14400 (max. 10000000)
+ 395 PDF objects out of 1000 (max. 8388607)
+ 344 compressed objects within 4 object streams
+ 61 named destinations out of 1000 (max. 500000)
+ 12073 words of extra memory for PDF output out of 14400 (max. 10000000)
 

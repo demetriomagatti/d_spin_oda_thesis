@@ -17,7 +17,7 @@
 % Based on:
 % J. Jiang et al., "D-SPIN constructs regulatory network models from
 % scRNA-seq revealing organizing principles of perturbation response",
-% Cell 189 (2026), 4159--4184.e35.
+% Cell 189 (2026), 4159--4184.e35.	
 %
 % This document is an educational simplification of the published method.
 % It intentionally omits some computational and inferential details.
@@ -1496,5 +1496,273 @@ A
 B
 \]
 Thus, perturbations provide information that is not available from observational correlations alone: they actively change one part of the system and allow us to measure how the rest of the system responds. A controlled perturbation therefore helps distinguish \textit{association} from \textit{response to intervention}, which is the key step toward identifying causal relationships. 
+
+\newpage
+
+\section{Introduction to the thesis use-case}
+
+\subsection{Perturb-seq and single-cell genetic perturbation profiling}
+
+Understanding how genes control cellular phenotypes requires methods that can
+connect a specific genetic perturbation to its molecular consequences. Classical
+genetic screens have traditionally relied on relatively simple phenotypic
+readouts, such as cell viability, proliferation, or the expression of a selected
+marker. Although these approaches are highly scalable, they reduce the response
+of a cell to a small number of measurements and can therefore obscure the
+molecular mechanisms underlying a phenotype. Single-cell RNA sequencing
+(scRNA-seq), in contrast, provides a high-dimensional description of the
+transcriptional state of individual cells. Perturb-seq combines these two
+approaches by coupling pooled CRISPR-based genetic perturbations with
+single-cell transcriptomics, thereby enabling the molecular consequences of
+many perturbations to be measured simultaneously
+\cite{dixit2016perturbseq}.
+
+In a Perturb-seq experiment, cells are exposed to a library of single-guide RNAs
+(sgRNAs), with each guide targeting a particular gene or regulatory element.
+The perturbation identity is subsequently associated with the transcriptome of
+the same cell. Consequently, every sequenced cell can be regarded as an
+individual perturbation-response measurement: the sgRNA defines the
+experimental intervention, while the expression profile provides a
+high-dimensional phenotype. The original Perturb-seq implementation used an
+expressed guide barcode to connect the perturbation to the cell barcode and
+its corresponding transcriptome \cite{dixit2016perturbseq}.
+
+This experimental design provides an important conceptual advantage over bulk
+measurements. A perturbation does not necessarily produce a homogeneous
+response: cells carrying the same perturbation may occupy different
+transcriptional states because of stochasticity, cell-cycle differences,
+technical variation, or incomplete perturbation efficiency. These effects can
+be directly observed with single-cell measurements rather than being averaged
+away. At the same time, pooled screening substantially reduces the experimental
+cost compared with performing a separate RNA-seq experiment for every
+perturbation.
+
+Perturb-seq is therefore particularly suited to the study of gene regulatory
+networks and genetic interactions. In a combinatorial experiment, cells can
+receive either one or multiple perturbations, making it possible to compare
+single-gene and multi-gene responses. The resulting data contain information
+not only about the effect of individual genes but also about how their effects
+combine. This is important because cellular phenotypes frequently arise from
+interactions between regulatory pathways rather than from the independent
+action of individual genes.
+
+\subsection{The Norman et al.\ Perturb-seq experiment}
+
+A particularly influential application of Perturb-seq was presented by Norman
+et al.\ in 2019 in the study \emph{Exploring genetic interaction manifolds
+	constructed from rich single-cell phenotypes} \cite{norman2019}. The authors
+investigated genetic interactions in human K562 cells using CRISPR activation
+(CRISPRa) and single-cell transcriptomic profiling. Unlike CRISPR knockout or
+CRISPR interference, CRISPRa is a gain-of-function approach: rather than
+reducing the expression of a target gene, it activates endogenous gene
+expression. This distinction is important when interpreting the resulting
+phenotypes, since the measured response corresponds to increased activity of
+the targeted gene or genes.
+
+The experimental strategy was constructed in two stages. First, Norman et
+al.\ generated a large genetic interaction map using a growth-based CRISPRa
+screen. Pairs of genes were co-activated and their effects on cellular fitness
+were compared with the effects expected from the corresponding single-gene
+perturbations. This allowed the authors to identify strong genetic interactions
+(GIs). However, a fitness measurement is intrinsically low-dimensional: two
+different molecular mechanisms can result in the same change in growth.
+Consequently, the fitness screen identified interactions without necessarily
+revealing why those interactions occurred.
+
+Perturb-seq was subsequently used to provide a richer phenotype for a selected
+set of these interactions. Norman et al.\ profiled 132 gene pairs using
+combinatorial CRISPRa perturbations, together with the corresponding
+single-gene perturbations and controls. In total, the resulting experiment
+contained 287 perturbation conditions considered in the construction of the
+transcriptional genetic-interaction landscape \cite{norman2019}.
+
+The central conceptual contribution of the study was to regard each
+transcriptional phenotype as a point in a high-dimensional space. Instead of
+assigning a single scalar genetic-interaction score to a gene pair, the
+transcriptional response provides a vector containing the expression levels of
+many genes. The collection of these vectors was termed a \emph{genetic
+	interaction manifold}. Dimensionality-reduction techniques such as UMAP could
+then be used to visualize relationships between perturbations. Perturbations
+producing similar transcriptional states were positioned close to one another,
+allowing groups of genes and interactions to be associated with common
+biological processes \cite{norman2019}.
+
+This representation enabled several types of biological interpretation.
+Perturbations could be ordered according to their transcriptional similarity,
+allowing the authors to infer relationships between regulatory pathways.
+Furthermore, the rich phenotype could distinguish different mechanistic
+origins of genetic interactions that would appear similar in a conventional
+fitness-based screen. One notable result was the identification and
+characterization of a synergistic interaction involving \emph{CBL} and
+\emph{CNN1}, which was associated with erythroid differentiation
+\cite{norman2019}.
+
+The Norman et al.\ dataset therefore illustrates an important transition in
+functional genomics: genetic perturbations are not treated merely as labels
+for a binary phenotype, but as controlled interventions that probe the
+structure of a high-dimensional cellular state space.
+
+\subsection{Cutting corners}
+
+The present work uses a preprocessed version of the Norman et al.\ dataset
+available through Figshare \cite{weinberger2024figshare}. This resource was
+published by Ethan Weinberger and is explicitly described as
+``Preprocessed CRISPRa Perturb-seq data from Norman et al., 2019'', prepared
+for the study introducing ContrastiveVI+ \cite{weinberger2024}. The original
+experimental data are available through GEO under accession GSE133344
+\cite{norman2019geo}.
+
+The distinction between the original dataset and the Figshare resource is
+important. The Figshare object is not raw sequencing data and therefore does
+not require reconstruction of the complete experimental processing pipeline
+from sequencing reads. Instead, it provides a single-cell expression matrix
+together with cell-level metadata in a form suitable for computational
+analysis. In particular, the dataset is distributed as a processed
+single-cell data object and has been used in subsequent computational studies
+of perturbation responses \cite{weinberger2024figshare}.
+
+The underlying Norman dataset contains cells subjected to zero, one, or two
+target-gene perturbations. Subsequent analyses of the GSE133344 data have
+reported approximately 110,000 cells and thousands of measured genes, with
+236 distinct genetic perturbation conditions affecting 105 target genes in
+one processed representation of the dataset \cite{yu2025}. The exact number
+of cells and genes available to an analysis depends on the preprocessing and
+filtering steps applied, and should therefore be reported explicitly for the
+particular Figshare file used in a thesis.
+
+The processed dataset is particularly convenient for downstream single-cell
+analysis because the perturbation identity is represented in the cell
+metadata. This allows cells to be grouped according to their perturbation
+condition and compared with control cells. For example, cells carrying a
+non-targeting control can be used to characterize the baseline distribution of
+transcriptional states, whereas cells carrying a particular CRISPRa
+perturbation can be treated as samples from the corresponding perturbed
+distribution.
+
+An important consideration is that the presence of an sgRNA does not
+necessarily imply that every cell has undergone an equally strong functional
+perturbation. Variable guide efficiency can generate cells that contain a
+perturbation label but exhibit little or none of the expected transcriptional
+response. This issue is particularly relevant when interpreting cell-level
+heterogeneity. Indeed, Weinberger et al.\ developed ContrastiveVI+ partly
+because pooled CRISPR screens contain noisy perturbation labels and because
+some guide-positive cells can escape the functional consequences of the
+perturbation \cite{weinberger2024}. Consequently, perturbation identity should
+be interpreted as an experimental assignment rather than as a perfect
+measurement of perturbation strength.
+
+%\section{D-SPIN as a framework for perturbation-response modeling}
+%
+%The high dimensionality of Perturb-seq creates a complementary computational
+%challenge. Visualization methods such as PCA and UMAP can reveal similarities
+%between perturbations, but they do not directly provide an interpretable
+%mechanistic model of the interactions responsible for the observed cellular
+%states. D-SPIN (Dimension-scalable Single-cell Perturbation Integration
+%Network) was developed to address this problem by constructing probabilistic
+%regulatory-network models directly from single-cell perturbation data
+%\cite{jiang2023dspin}.
+%
+%D-SPIN models gene expression, or alternatively groups of co-expressed genes
+%called gene programs, using a condition-dependent probabilistic graphical
+%model. The central object is a unified interaction network whose nodes
+%represent genes or gene programs. Perturbations are represented as
+%condition-specific inputs that modify the activity of these nodes. In this
+%way, information from many perturbation conditions is integrated into a
+%single network rather than treating each perturbation independently
+%\cite{jiang2023dspin}.
+%
+%Conceptually, the model can be written as a probability distribution over
+%cellular states,
+%
+%\begin{equation}
+%P(\mathbf{s}\mid\mathbf{h}) =
+%\frac{1}{Z(\mathbf{h})}
+%\exp\left[
+%\frac{1}{2}\mathbf{s}^{T}J\mathbf{s}
+%+
+%\mathbf{h}^{T}\mathbf{s}
+%\right],
+%\end{equation}
+%
+%where $\mathbf{s}$ represents the activity state of the genes or gene
+%programs, $J$ represents their pairwise interactions, and $\mathbf{h}$
+%represents the perturbation-dependent fields. The normalization factor
+%$Z(\mathbf{h})$ ensures that the expression defines a probability
+%distribution. This formulation is related to spin-network and Markov-random
+%field models. Importantly, $J$ is shared across perturbation conditions,
+%whereas $\mathbf{h}$ changes according to the applied perturbation
+%\cite{jiang2023dspin}.
+%
+%This distinction is central to the usefulness of D-SPIN for Perturb-seq.
+%Instead of asking only whether perturbation $A$ changes gene $B$, D-SPIN asks
+%how perturbations collectively expose the conditional dependencies between
+%different components of the cellular regulatory system. Perturbations can
+%therefore reveal interactions that are weak or invisible under the
+%unperturbed condition. The resulting network provides a representation of the
+%cellular system that is both descriptive and generative: it can reproduce
+%observed distributions of cell states and can be used to simulate responses
+%to perturbations \cite{jiang2023dspin}.
+
+\subsection{Application of D-SPIN to the Norman dataset}
+
+The preprocessed Norman et al.\ dataset is particularly suitable for D-SPIN
+because it contains many distinct perturbation conditions measured at
+single-cell resolution. A D-SPIN analysis can therefore use the perturbation
+identity in the cell metadata as the condition variable while using the
+expression matrix as the molecular phenotype.
+
+A practical analysis consists of several conceptual stages. First, cells and
+genes should be quality-controlled and the expression matrix transformed into
+a representation appropriate for D-SPIN. The D-SPIN implementation expects
+log-normalized single-cell expression data and condition labels identifying
+the perturbation associated with each cell. Matched control cells are
+preferable because they allow perturbation responses to be estimated relative
+to the appropriate baseline \cite{jiang2025guide}.
+
+Second, the expression space can either be represented directly at the
+gene level or reduced to gene programs. D-SPIN provides an unsupervised
+orthogonal non-negative matrix factorization (oNMF) procedure for identifying
+such programs, although predefined biologically motivated gene sets can also
+be used \cite{jiang2023dspin}. Program-level modeling is particularly
+attractive for a master-thesis analysis because it reduces dimensionality and
+often makes the resulting network easier to interpret biologically.
+
+Third, D-SPIN jointly infers the interaction network and the
+perturbation-response vectors. The resulting network can then be
+used to determine which genes or programs interact, which perturbations act
+on particular parts of the network, and how different perturbations produce
+distinct cellular states. In the context of Norman et al., this provides a
+complementary perspective to the original genetic-interaction manifold:
+whereas Norman et al.\ primarily used transcriptomic similarity to organize
+perturbations, D-SPIN attempts to explain those observed responses through a
+shared network model.
+
+This distinction also defines an important methodological advantage. Two
+perturbations can generate similar transcriptional profiles without acting on
+the same regulatory components, while two perturbations with apparently
+different profiles may affect different nodes of a common network. D-SPIN's
+joint inference of network interactions and perturbation effects is designed
+to capture these relationships. The method has specifically been demonstrated
+on large Perturb-seq datasets, including K562 perturbation data, where it was
+used to investigate regulatory organization and cell-fate responses
+\cite{jiang2023dspin}.
+
+Thus, the Norman et al.\ dataset and D-SPIN form a natural methodological
+combination. Perturb-seq provides the experimentally controlled,
+high-dimensional perturbation-response measurements; the preprocessed
+Figshare object provides these measurements in a computationally accessible
+form; and D-SPIN provides a probabilistic framework for integrating the
+different perturbation conditions into an interpretable network model. The
+result is a progression from \emph{perturbation} to \emph{transcriptional
+	phenotype} and finally to \emph{network-level interpretation}, which is the
+central rationale for using D-SPIN in the present study.
+
+
+\section{Dataset description}
+
+\section{Analysis pipeline}
+
+\section{Results}
+
 
 \end{document}
