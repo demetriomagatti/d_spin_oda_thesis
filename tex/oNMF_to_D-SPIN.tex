@@ -36,6 +36,9 @@
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{ulem}
+\usepackage{tikz}
+\usepackage{relsize}
+\usetikzlibrary{positioning}
 
 \setstretch{1.08}
 \setlength{\parindent}{0pt}
@@ -58,6 +61,17 @@
 {}
 
 \newcommand\identity{1\kern-0.25em\text{l}}
+
+\definecolor{darkgreen}{RGB}{0,80,0}
+\definecolor{darkred}{RGB}{110,0,0}
+\definecolor{darkishgreen}{RGB}{34,139,84}
+\definecolor{darkishred}{RGB}{180,70,70}
+\newcommand{\enrichedbox}{%
+	\makebox[0.65cm][l]{\textcolor{darkishgreen}{\rule{0.18cm}{0.18cm}}}%
+}
+\newcommand{\notenrichedbox}{%
+	\makebox[0.65cm][l]{\textcolor{darkishred}{\rule{0.18cm}{0.18cm}}}%
+}
 
 %\hypersetup{
 %\noindent     colorlinks=true,
@@ -131,6 +145,73 @@ correspondence with a face in \textit{Y} . An encoding consists of the coefficie
 a linear combination of basis images. 
 
 This nonnegativity constraint is what makes NMF different from ohter dimensionality reduction techniques like Principal Component Analysis. These constraints permit the combination of multiple basis images to represent a face, with the key point of only allowing additive combinations. In contrast to PCA, no subtractions can occur. For these reasons, the nonnegativity constraints are compatible with the intuitive notion of combining parts to form a whole, which is how NMF learns a part-based representation.
+
+\textcolor{red}{Add citation in introduction and also figures that compare PCA to NMF.}
+
+\begin{figure}[h]
+	\centering
+	\setlength{\abovecaptionskip}{2pt}
+\[
+\begin{array}{c@{\qquad}c}
+\begin{array}{c}
+\textbf{PCA}\\[4pt]
+X\approx
+\underbrace{
+	\begin{array}{|cc|}
+	\hline
+	+&-\\
+	+&+\\
+	-&+\\
+	-&-\\
+	\hline
+	\end{array}}_{U}
+\;
+\underbrace{
+	\begin{array}{|cccc|}
+	\hline
+	+&+&-&-\\
+	-&+&+&-\\
+	\hline
+	\end{array}}_{V^\top}
+\\[8pt]
+%\downarrow\\[-2pt]
+\\[-8pt]
+\text{signed directions}\\
+\text{addition or subtraction allowed}
+\end{array}
+&
+\qquad \qquad
+\begin{array}{c}
+\textbf{NMF}\\[4pt]
+X\approx
+\underbrace{
+	\begin{array}{|cc|}
+	\hline
+	+&0\\
+	+&+\\
+	0&+\\
+	0&+\\
+	\hline
+	\end{array}}_{W}
+\;
+\underbrace{
+	\begin{array}{|cccc|}
+	\hline
+	+&+&+&0\\
+	+&0&0&+\\
+	\hline
+	\end{array}}_{H}
+\\[8pt]
+%\downarrow\\[-2pt]
+\\[-8pt]
+\text{non-negative parts}\\
+\text{additive only}
+\end{array}
+\end{array}
+\]
+    \caption{Comparison of PCA and non-negative matrix factorization (NMF).}
+\label{fig:pca_vs_nmf}
+\end{figure}
 
 \subsection{Bridging to genomics}
 
@@ -405,6 +486,59 @@ In transcriptomics,
 \]
 with different weights for each cell. The structure is the same, but we have to be careful with the analogy.\textbf{ A gene program is} not literally a biological ``part'' in exactly the same sense as an eye is a physical part of a face. Rather, it is a \textbf{positive component of the observed expression profile}.
 
+\subsection{oNMF} 
+
+The NMF formulation described above provides an additive representation of the data, where each observation can be reconstructed as a combination of several nonnegative programs. However, standard NMF does not prevent different programs from containing similar or overlapping genes. This can make the interpretation of the resulting programs more difficult, since several factors may describe partially overlapping biological processes.
+
+\textbf{Orthogonal Nonnegative Matrix Factorization (oNMF)} introduces an additional constraint to address this issue. In addition to requiring all values to be nonnegative, the inferred programs are constrained to be \textbf{orthogonal}. In the context of gene-expression data, this encourages different programs to capture distinct patterns of genes rather than repeatedly describing the same transcriptional signal. The combination of nonnegativity and orthogonality therefore provides a representation that is both additive and less redundant. This is particularly useful when the objective is to identify a collection of distinct gene-expression programs.
+
+Starting from the NMF decomposition
+
+\[
+Y \approx WH
+\]
+
+the nonnegativity constraints remain
+
+\[
+W\geq0
+\qquad
+H\geq0
+\]
+
+oNMF adds an orthogonality constraint to the factor representing the gene programs. Here, the concept of matrix orthogonality, which is well-defined in the context of square matrices, is used in a "broader" definition for non-square matrices
+\[
+H^T H = \identity_r
+\]
+
+Depending on the formulation, orthogonality can be imposed on either the program matrix or the activity matrix. In the formulation used for gene-program discovery in the present context, the constraint is applied to the programs, encouraging different programs to occupy distinct directions in gene-expression space. Orthogonality can therefore be understood as an additional mechanism for separating the programs from one another. 
+
+The practical consequence can be illustrated with a simple example. Suppose that two programs are both strongly associated with the same group of neuronal genes. With ordinary NMF, there is no explicit constraint preventing both programs from containing those genes with substantial weights. The resulting factors may therefore be difficult to distinguish biologically. With oNMF, the orthogonality constraint discourages such overlap, favouring a decomposition in which the programs capture different aspects of the observed transcriptional variation.
+
+This does not mean that two biological processes can never influence the same gene. Rather, orthogonality is a mathematical constraint on the representation learned from the data. It should therefore not be interpreted as claiming that biological pathways are themselves completely independent. Instead, it encourages the mathematical representation to assign distinct patterns of gene expression to different programs. The resulting programs can consequently be easier to interpret as separate transcriptional components.
+
+For transcriptomics, the decomposition can therefore be understood as
+\[
+\text{cell expression}
+\approx
+\text{activity}_1\times\text{gene program}_1
++
+\text{activity}_2\times\text{gene program}_2
++\cdots
+\]
+
+with two important properties. First, the contributions remain nonnegative, meaning that programs contribute additively to the reconstructed expression profile. Second, the programs are constrained to be orthogonal, reducing redundancy between them. The resulting representation can thus be viewed as a collection of distinct transcriptional patterns together with their respective activities across cells or samples.
+
+This property is particularly relevant for perturbation experiments. Different perturbations may affect several biological processes at the same time, and their transcriptional consequences may therefore be represented by multiple programs. If these programs are sufficiently distinct, their individual activities can be examined separately, making it possible to determine which aspects of the transcriptional response are associated with each perturbation. The programs can subsequently be compared across perturbations to identify shared, opposing, or selective responses.
+
+The interpretation of an oNMF program therefore relies on both its \textbf{gene composition} and its \textbf{activity pattern}. The genes with the highest weights provide information about the biological processes represented by the program, while the activity values indicate where or under which experimental conditions that program contributes most strongly to the observed expression profiles. A program can consequently be interpreted as a learned transcriptional pattern rather than simply as a list of genes.
+
+This distinction is important when comparing oNMF programs with predefined biological gene sets. A predefined gene set is established independently of the dataset, for example from prior biological knowledge. An oNMF program, in contrast, is learned directly from the expression data. Its biological interpretation is obtained afterwards by examining its characteristic genes, functional enrichment, and activity across the observations. The program is therefore a \textbf{data-driven representation of coordinated gene expression}, rather than a predefined biological category.
+
+In summary, oNMF extends the basic NMF framework by combining two constraints that are particularly useful for transcriptomic interpretation: \textbf{nonnegativity}, which supports an additive and biologically intuitive representation of gene expression, and \textbf{orthogonality}, which encourages the resulting programs to be distinct and non-redundant. This makes oNMF well suited for identifying a set of interpretable gene-expression programs and subsequently studying how those programs are activated across cells, samples, or experimental perturbations. In the context of perturbation-based single-cell analysis, these programs provide the basis for characterizing transcriptional responses and for studying the relationships between different biological processes.
+
+\newpage
+
 %\section{There is one subtle but important difference}
 %
 %This is where I would \textbf{not push the image analogy too far}.
@@ -440,52 +574,19 @@ with different weights for each cell. The structure is the same, but we have to 
 %
 %Calling $W_k$ a \textbf{gene-expression program}, \textbf{factor}, or \textbf{gene loading vector} is more intuitive for transcriptomics.
 
-\newpage
-
-\section{Nonnegative Spatial Factorization}
-
-This section is based on the \textit{Nonnegative spatial factorization applied to spatial genomics} paper by F. W. Townes and B. E. Engelhardt, The goal here so to extract and highlight the key points, while avoiding deep-diving into optimization algorithms, loss functions to be minimized and so on. The original paper is obviously much more detailed when it comes to that.
-
-\subsection{Introducing spatial transcriptomics}
-
-\noindent Imagine two neighboring cells \textit{A} and \textit{B}, whose coordinates are very close. Biologically, it is often reasonable to expect their gene-expression patterns to be related. Ordinary NMF doesn't know that/makes no use of that information, i.e. \textit{for ordinary probabilistic NMF, the factor for cell A and the factor for cell B are essentially treated as independent draws}. 
-
-\noindent  The model knows
-\[
-Y_i = \text{expression profile at location }i
-\]
-\noindent  but it doesn't explicitly know that
-\[
-X_i \approx X_k
-\]
-\noindent means we should expect
-\[
-Y_i \text{ and } Y_k \text{ may be related}
-\]
-
-\noindent \textbf{Nonspatial models do not use the spatial coordinates $x_i$ when defining the prior on the latent factors.}
-
-NMF asks
-
-\begin{quote}
-\textit{Can I explain these expression vectors using a small number of nonnegative gene-expression programs?}
-\end{quote}
-
-In spatial transcriptomics, we additionally know \textit{where} each cell/location is. The question we pose ourselves is
-
-\begin{quote}
-\textit{\textbf{Should the encoding of a spatial location depend on where that location is?}}
-\end{quote}
-
-That is precisely the conceptual step from \textbf{NMF} to probablistic NMF and to \textbf{Nonnegative Spatial Factorization} (\textbf{NSF}).
-
-%\subsubsection{Non-use of spatial information}
-
+%\newpage
+%
+%\section{Nonnegative Spatial Factorization}
+%
+%This section is based on the \textit{Nonnegative spatial factorization applied to spatial genomics} paper by F. W. Townes and B. E. Engelhardt, The goal here so to extract and highlight the key points, while avoiding deep-diving into optimization algorithms, loss functions to be minimized and so on. The original paper is obviously much more detailed when it comes to that.
+%
+%\subsection{Introducing spatial transcriptomics}
+%
 %\noindent Imagine two neighboring cells \textit{A} and \textit{B}, whose coordinates are very close. Biologically, it is often reasonable to expect their gene-expression patterns to be related. Ordinary NMF doesn't know that/makes no use of that information, i.e. \textit{for ordinary probabilistic NMF, the factor for cell A and the factor for cell B are essentially treated as independent draws}. 
 %
 %\noindent  The model knows
 %\[
-%Y_i = \text{expression at location }i
+%Y_i = \text{expression profile at location }i
 %\]
 %\noindent  but it doesn't explicitly know that
 %\[
@@ -497,410 +598,233 @@ That is precisely the conceptual step from \textbf{NMF} to probablistic NMF and 
 %\]
 %
 %\noindent \textbf{Nonspatial models do not use the spatial coordinates $x_i$ when defining the prior on the latent factors.}
-
-\subsection{Using spatial information}
-
-\noindent Suppose that we have a tissue sample like
-
-\[
-\begin{array}{cccc}
-A&A&A&A\\
-A&A&A&A\\
-A&A&B&B\\
-A&B&B&B
-\end{array}
-\]
-
-\noindent where A and B represent two different tissue environments. 
-
-\noindent We can expect a latent factor to vary smoothly over space, looking something like:
-
-\[
-\begin{array}{cccc}
-\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
-\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
-\blacksquare&\blacksquare&\square&\square\\
-\blacksquare&\square&\square&\square
-\end{array}
-\]
-
-\noindent \textit{If two locations are close together, their factor values should tend to be similar. If two locations are far apart, they may be less similar.} 
-
-\subsubsection{Gaussian processes}
-
-A Gaussian Process (GP), in the most compact definition ever, is essentially a probability distribution over functions. 
-
-Imagine drawing a function \textit{f(x)} that, for our specific case, is a smooth factor-activity function. A gaussian process gives us a probabilistic model for what kinds of functions $f(x)$ are plausible.
-
-GPs can encode the information
-
-\begin{quote}
-	\textit{nearby spatial locations should tend to have similar values of the latent factor}
-\end{quote}
-
-through the so called \textbf{kernel} or \textbf{kernel function \textit{k}}. Roughly, the kernel answers the question:
-
-\begin{quote}
-	\textit{``How strongly should the factor values at locations $x_i$ and $x_k$ be correlated?''}
-\end{quote}
-
-If $x_i$ and $x_k$ are close $k(x_i,x_k)$ is large, if they are far apart $k(x_i,x_k)$ is smaller. 
-
-Instead of estimating each factor independently for every cell, we are effectively saying that \textit{factor activity depends on spatial location}. 
-
-\noindent The paper on which this explanations is based on uses a Matérn kernel with smoothness parameter $3/2$. I'm still not sure deep diving into kernel functions is something I need to do.
-
-\subsubsection{NMF + GP = NSF}
-
-We can combine the two ideas.
-
-\textbf{NMF}: $\text{gene expression}
-\approx
-\text{factor activity}
-\times
-\text{gene-factor association}
-$
-
-\textbf{GP}: $
-\text{factor activity}
-=
-\text{a spatially correlated function}
-$
-
-\textbf{Nonnegative Spatial Factorization} (\textbf{NSF}) simply combines these. 
-
-%The authors write:
+%
+%NMF asks
+%
+%\begin{quote}
+%\textit{Can I explain these expression vectors using a small number of nonnegative gene-expression programs?}
+%\end{quote}
+%
+%In spatial transcriptomics, we additionally know \textit{where} each cell/location is. The question we pose ourselves is
+%
+%\begin{quote}
+%\textit{\textbf{Should the encoding of a spatial location depend on where that location is?}}
+%\end{quote}
+%
+%That is precisely the conceptual step from \textbf{NMF} to probablistic NMF and to \textbf{Nonnegative Spatial Factorization} (\textbf{NSF}).
+%
+%%\subsubsection{Non-use of spatial information}
+%
+%%\noindent Imagine two neighboring cells \textit{A} and \textit{B}, whose coordinates are very close. Biologically, it is often reasonable to expect their gene-expression patterns to be related. Ordinary NMF doesn't know that/makes no use of that information, i.e. \textit{for ordinary probabilistic NMF, the factor for cell A and the factor for cell B are essentially treated as independent draws}. 
+%%
+%%\noindent  The model knows
+%%\[
+%%Y_i = \text{expression at location }i
+%%\]
+%%\noindent  but it doesn't explicitly know that
+%%\[
+%%X_i \approx X_k
+%%\]
+%%\noindent means we should expect
+%%\[
+%%Y_i \text{ and } Y_k \text{ may be related}
+%%\]
+%%
+%%\noindent \textbf{Nonspatial models do not use the spatial coordinates $x_i$ when defining the prior on the latent factors.}
+%
+%\subsection{Using spatial information}
+%
+%\noindent Suppose that we have a tissue sample like
 %
 %\[
-%y_{ij}\sim\operatorname{Poi}(\nu_i\lambda_{ij})
+%\begin{array}{cccc}
+%A&A&A&A\\
+%A&A&A&A\\
+%A&A&B&B\\
+%A&B&B&B
+%\end{array}
 %\]
 %
-%with
+%\noindent where A and B represent two different tissue environments. 
+%
+%\noindent We can expect a latent factor to vary smoothly over space, looking something like:
 %
 %\[
-%\lambda_{ij}
+%\begin{array}{cccc}
+%\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
+%\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
+%\blacksquare&\blacksquare&\square&\square\\
+%\blacksquare&\square&\square&\square
+%\end{array}
+%\]
+%
+%\noindent \textit{If two locations are close together, their factor values should tend to be similar. If two locations are far apart, they may be less similar.} 
+%
+%\subsubsection{Gaussian processes}
+%
+%A Gaussian Process (GP), in the most compact definition ever, is essentially a probability distribution over functions. 
+%
+%Imagine drawing a function \textit{f(x)} that, for our specific case, is a smooth factor-activity function. A gaussian process gives us a probabilistic model for what kinds of functions $f(x)$ are plausible.
+%
+%GPs can encode the information
+%
+%\begin{quote}
+%	\textit{nearby spatial locations should tend to have similar values of the latent factor}
+%\end{quote}
+%
+%through the so called \textbf{kernel} or \textbf{kernel function \textit{k}}. Roughly, the kernel answers the question:
+%
+%\begin{quote}
+%	\textit{``How strongly should the factor values at locations $x_i$ and $x_k$ be correlated?''}
+%\end{quote}
+%
+%If $x_i$ and $x_k$ are close $k(x_i,x_k)$ is large, if they are far apart $k(x_i,x_k)$ is smaller. 
+%
+%Instead of estimating each factor independently for every cell, we are effectively saying that \textit{factor activity depends on spatial location}. 
+%
+%\noindent The paper on which this explanations is based on uses a Matérn kernel with smoothness parameter $3/2$. I'm still not sure deep diving into kernel functions is something I need to do.
+%
+%\subsubsection{NMF + GP = NSF}
+%
+%We can combine the two ideas.
+%
+%\textbf{NMF}: $\text{gene expression}
+%\approx
+%\text{factor activity}
+%\times
+%\text{gene-factor association}
+%$
+%
+%\textbf{GP}: $
+%\text{factor activity}
 %=
-%\sum_{l=1}^{L}w_{jl}e^{f_{il}},
-%\]
+%\text{a spatially correlated function}
+%$
 %
-%and
+%\textbf{Nonnegative Spatial Factorization} (\textbf{NSF}) simply combines these. 
+%
+%%The authors write:
+%%
+%%\[
+%%y_{ij}\sim\operatorname{Poi}(\nu_i\lambda_{ij})
+%%\]
+%%
+%%with
+%%
+%%\[
+%%\lambda_{ij}
+%%=
+%%\sum_{l=1}^{L}w_{jl}e^{f_{il}},
+%%\]
+%%
+%%and
+%%
+%%\[
+%%f_{il}=f_l(x_i)
+%%\sim
+%%GP(\mu_l(x_i),k_l(x_i,X)).
+%%\]
+%%
+%%But let's translate that line by line.
+%
+%\subsubsection{Mathematical basis}
+%
+%In transcriptomics, the analysis results are expressed in form of observed \textbf{counts}. For example:
 %
 %\[
-%f_{il}=f_l(x_i)
-%\sim
-%GP(\mu_l(x_i),k_l(x_i,X)).
+%Y_{i\mu}=17
 %\]
 %
-%But let's translate that line by line.
-
-\subsubsection{Mathematical basis}
-
-In transcriptomics, the analysis results are expressed in form of observed \textbf{counts}. For example:
-
-\[
-Y_{i\mu}=17
-\]
-
-\noindent means 17 transcripts of gene $\mu$ were observed at location $i$.
-
-\noindent Counts are naturally modeled using distributions such as the Poisson or negative binomial, so we can write 
-
-\[
-Y_{i\mu}\sim\operatorname{Poisson}(\nu_i\lambda_{i\mu}).
-\]
-
-\noindent with
-
-\begin{itemize}
-	\item $y_{i\mu}$ = observed count
-	\item $\lambda_{i\mu}$ = underlying expected expression level
-	\item $\nu_i$ = size factor accounting for the fact that some locations simply have more total transcripts than others.
-\end{itemize}
-
-\noindent So far, nothing specifically spatial has happened. 
-
-\noindent The underlying expression level is what we are trying to model/describe. 
-
-\[
-\lambda_{i\mu}
-=
-\sum_{\alpha=1}^{r} W_{\mu \alpha} H_{\alpha \mu}
-\]
-
-We now make the assumption that the number of transcripts is the same for all locations, so that we can just revert to the common form
-
-\[ 
-Y_{i \mu} \approx \sum_{\alpha = 1}^r W_{i \alpha} H_{\alpha \mu}
-\]
-
-%In NMF, we are trying to get a model to descibe the expression level for gene \textit{i} at location $\mu$ directly  
-%take the expression level for gene \textit{i} at location $\mu$ that we derived above 
-
-
-%Now, we aim for the underlying expected expression level $\lambda_{i \mu}$ in a similar way
+%\noindent means 17 transcripts of gene $\mu$ were observed at location $i$.
+%
+%\noindent Counts are naturally modeled using distributions such as the Poisson or negative binomial, so we can write 
+%
+%\[
+%Y_{i\mu}\sim\operatorname{Poisson}(\nu_i\lambda_{i\mu}).
+%\]
+%
+%\noindent with
+%
+%\begin{itemize}
+%	\item $y_{i\mu}$ = observed count
+%	\item $\lambda_{i\mu}$ = underlying expected expression level
+%	\item $\nu_i$ = size factor accounting for the fact that some locations simply have more total transcripts than others.
+%\end{itemize}
+%
+%\noindent So far, nothing specifically spatial has happened. 
+%
+%\noindent The underlying expression level is what we are trying to model/describe. 
 %
 %\[
 %\lambda_{i\mu}
 %=
 %\sum_{\alpha=1}^{r} W_{\mu \alpha} H_{\alpha \mu}
 %\]
-
-and then modify it to take into account spatial features. We will arrive at 
-
-\[
-Y_{i \mu}
-=
-\sum_{\alpha = 1}^r W_{\mu \alpha}~  e^{f_{\alpha} (x_ \mu)}
-\]
-
-$W_{\mu \alpha}$ is exactly the same as before, and it is still related to how strongly is gene $\mu$ associated with factor $\alpha$. 
-
-The change is in the term that tells us how active is factor $\alpha$ at a certaing spatial location.
-
-\noindent There's one small thing we are missing. Gaussian processes have no positivity-related constraints by definition, and produce a real-valued quantity
-
-\[
-f_{\alpha} (x_ \mu) \in(-\infty,\infty).
-\]
-
-but we want factor activity to be \textbf{positive}. Exponentiation is hereby used to transform
-
-\[
-f_{\alpha} (x_ \mu) \in (-\infty, +\infty) \quad \rightarrow \quad e^{f_{\alpha} (x_ \mu)} \in (0, +\infty).
-\]
-
-so that the GP can model an unrestricted real-valued function $f_l(x)$ while the actual factor contribution $e^{f_l(x)}$ is always positive. The result is called an \textbf{exponentiated Gaussian process}. 
-
- The exponential guarantees $e^{f_{il}}>0$, while $w_{jl}\geq0$ is a "standard" contraint from NFM. Therefore every term in
-
-\[
-Y_{i \mu}
-=
-\sum_{\alpha = 1}^r W_{\mu \alpha}~  e^{f_{\alpha} (x_ \mu)}
-\]
-is nonnegative, giving NSF its interpretable, parts-based structure while incorporating spatial information.
-
-\subsection{Practical example}
-
-Suppose there are \(N=12\) spatial locations and \(r=3\) factors. Let
-\[
-Y_{i\mu}
-\]
-denote the expression of gene \(i\) at spatial location \(\mu\).
-
-A typical factor, let's say \textbf{factor 1}, of the NSF outcome looks something like
-
-\boxed{
-\begin{minipage}{0.45\textwidth}
-	\centering Spatial pattern
-	\[
-	\begin{array}{cccc}
-	\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
-	\blacksquare&\blacksquare&\blacksquare&\square\\
-	\blacksquare&\blacksquare&\square&\square
-	\end{array}
-	\]
-\end{minipage}
-\begin{minipage}{0.45\textwidth}
-	\centering Genes
-	\[
-	\begin{array}{ll}
-	\text{Gene A}: & 0.9\\
-	\text{Gene B}: & 0.8\\
-	\text{Gene C}: & 0.7\\
-	\text{Gene D}: & 0.1
-	\end{array}
-	\]
-\end{minipage} 
-}
-\\ 
-
-%\vspace{2mm}
-
-and similarly for other factors.
-
-\subsubsection{NMF}
-
-%With the specified notation, NMF is
-\[
-Y_{i\mu}
-\approx
-\sum_{\alpha=1}^3
-W_{i\alpha}H_{\alpha\mu}
-\]
-
-For Factor 1, the example corresponds to
-\[
-W_{\cdot 1}
-=
-\begin{pmatrix}
-0.9\\
-0.8\\
-0.7\\
-0.1
-\end{pmatrix}
-\]
-where the entries correspond to Genes A--D, and
-\[
-H_{1\cdot}
-=
-(1,1,1,1,1,1,1,0,1,1,0,0)
-\]
-
-If we reshape \(H_{1\cdot}\) onto the \(3\times4\) tissue grid, we obtain
-\[
-\begin{pmatrix}
-1&1&1&1\\
-1&1&1&0\\
-1&1&0&0
-\end{pmatrix}
-\]
-
-The crucial point is that NMF treats the entries of \(H_{1\cdot}\) as coefficients indexed by \(\mu\). It does not know that, for example, locations \(1\) and \(2\) are neighbors while locations \(1\) and \(12\) are far apart.
-
-Consider the two vectors
-\[
-H_{1\cdot}^{(A)}
-=
-(1,1,1,1,1,1,1,0,1,1,0,0)
-\]
-and
-\[
-H_{1\cdot}^{(B)}
-=
-(1,0,1,1,0,1,1,0,1,1,1,0)
-\]
-
-They contain the same number of nonzero entries and, if the corresponding columns of \(Y\) are permuted in the same way, they give exactly the same NMF reconstruction error. NMF has no mechanism that prefers \(H^{(A)}\) because its nonzero entries form one spatially coherent region.
-
-More formally, for any permutation \(P\) of the spatial locations,
-\[
-Y\approx WH
-\]
-can be transformed into
-\[
-YP\approx W(HP)
-\]
-with exactly the same reconstruction error. Standard NMF is therefore invariant to permutations of the spatial locations. The spatial coordinates themselves do not enter the model.
-
-So, to NMF,
-\[
-\boxed{
-	(1,1,1,1,1,1,1,0,1,1,0,0)
-}
-\]
-and
-\[
-\boxed{
-	(1,0,1,1,0,1,1,0,1,1,1,0)
-}
-\]
-are just two possible coefficient vectors. Their spatial arrangement has no mathematical meaning to the factorization.
-
-\subsubsection{NSF}
-
-\[
-Y_{i\mu}
-=
-\sum_{\alpha=1}^3
-W_{\mu\alpha}~e^{f_{\alpha} (x_ \mu)}
-\]
-
-For \textbf{factor 1}, the corresponding spatial contribution is
-\[
-W_{\mu1}~e^{f_{1}(x_\mu)}.
-\]
-
-Here the factor is not simply an arbitrary vector of coefficients attached to the 12 locations. Its value is generated through the spatially indexed latent function
-\[
-f_{1}(x_\mu)
-\]
-
-For the example, we could obtain a factor whose spatial expression is approximately
-\[
-\begin{pmatrix}
-1&1&1&1\\
-1&1&1&0\\
-1&1&0&0
-\end{pmatrix}
-\]
-
-Thus the factor can be represented as
-\[
-\begin{array}{cccc}
-\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
-\blacksquare&\blacksquare&\blacksquare&\square\\
-\blacksquare&\blacksquare&\square&\square
-\end{array}
-\]
-together with its gene-associated weights.
-
-The distinction is that NSF has access to the coordinates \(x_\mu\), so the values
-\[
-f_1(x_1),~f_1(x_2),~\ldots,~f_1(x_{12})
-\]
-are values of a spatial latent function. Consequently, the model can distinguish between spatial configurations that NMF regards as equivalent.
-
-For example,
-\[
-f_1(x_\mu)
-\quad\longrightarrow\quad
-\begin{pmatrix}
-1&1&1&1\\
-1&1&1&0\\
-1&1&0&0
-\end{pmatrix}
-\]
-represents a spatially coherent region, whereas
-\[
-f_1(x_\mu)
-\quad\longrightarrow\quad
-\begin{pmatrix}
-1&0&1&0\\
-1&1&0&1\\
-0&1&1&1
-\end{pmatrix}
-\]
-represents a spatially fragmented pattern.
-
-Those two configurations are not equivalent under the NSF model because the spatial coordinates \(x_\mu\) enter the latent function.
-
-The cleanest statement is
-\[
-\boxed{
-	\begin{array}{ll}
-	\text{NMF:}
-	&
-	H_{1\cdot}=(h_{11},\ldots,h_{1N})
-	\text{ is an arbitrary vector indexed by locations}
-	\\[2mm]
-	\text{NSF:}
-	&
-	e^{f_1(x_\mu)}
-	\text{ is generated by a latent function of spatial location }x_\mu
-	\end{array}
-}
-\]
-
-Under NMF, permuting the spatial locations merely permutes the entries of \(H\) and does not change the mathematical status of the solution. 
-
-Under NSF, where those values occur in space is part of the model itself.
-
-This is the sense in which NSF can distinguish a coherent pattern such as
-\[
-\begin{array}{cccc}
-\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
-\blacksquare&\blacksquare&\blacksquare&\square\\
-\blacksquare&\blacksquare&\square&\square
-\end{array}
-\]
-from a spatially scrambled pattern with the same marginal factor values.
-
-
-%Suppose NSF discovers $r=3$ factors. A typical outcome looks something like:
 %
-%\subsection*{Factor 1}
+%We now make the assumption that the number of transcripts is the same for all locations, so that we can just revert to the common form
 %
+%\[ 
+%Y_{i \mu} \approx \sum_{\alpha = 1}^r W_{i \alpha} H_{\alpha \mu}
+%\]
+%
+%%In NMF, we are trying to get a model to descibe the expression level for gene \textit{i} at location $\mu$ directly  
+%%take the expression level for gene \textit{i} at location $\mu$ that we derived above 
+%
+%
+%%Now, we aim for the underlying expected expression level $\lambda_{i \mu}$ in a similar way
+%%
+%%\[
+%%\lambda_{i\mu}
+%%=
+%%\sum_{\alpha=1}^{r} W_{\mu \alpha} H_{\alpha \mu}
+%%\]
+%
+%and then modify it to take into account spatial features. We will arrive at 
+%
+%\[
+%Y_{i \mu}
+%=
+%\sum_{\alpha = 1}^r W_{\mu \alpha}~  e^{f_{\alpha} (x_ \mu)}
+%\]
+%
+%$W_{\mu \alpha}$ is exactly the same as before, and it is still related to how strongly is gene $\mu$ associated with factor $\alpha$. 
+%
+%The change is in the term that tells us how active is factor $\alpha$ at a certaing spatial location.
+%
+%\noindent There's one small thing we are missing. Gaussian processes have no positivity-related constraints by definition, and produce a real-valued quantity
+%
+%\[
+%f_{\alpha} (x_ \mu) \in(-\infty,\infty).
+%\]
+%
+%but we want factor activity to be \textbf{positive}. Exponentiation is hereby used to transform
+%
+%\[
+%f_{\alpha} (x_ \mu) \in (-\infty, +\infty) \quad \rightarrow \quad e^{f_{\alpha} (x_ \mu)} \in (0, +\infty).
+%\]
+%
+%so that the GP can model an unrestricted real-valued function $f_l(x)$ while the actual factor contribution $e^{f_l(x)}$ is always positive. The result is called an \textbf{exponentiated Gaussian process}. 
+%
+% The exponential guarantees $e^{f_{il}}>0$, while $w_{jl}\geq0$ is a "standard" contraint from NFM. Therefore every term in
+%
+%\[
+%Y_{i \mu}
+%=
+%\sum_{\alpha = 1}^r W_{\mu \alpha}~  e^{f_{\alpha} (x_ \mu)}
+%\]
+%is nonnegative, giving NSF its interpretable, parts-based structure while incorporating spatial information.
+%
+%\subsection{Practical example}
+%
+%Suppose there are \(N=12\) spatial locations and \(r=3\) factors. Let
+%\[
+%Y_{i\mu}
+%\]
+%denote the expression of gene \(i\) at spatial location \(\mu\).
+%
+%A typical factor, let's say \textbf{factor 1}, of the NSF outcome looks something like
+%
+%\boxed{
 %\begin{minipage}{0.45\textwidth}
 %	\centering Spatial pattern
 %	\[
@@ -921,64 +845,274 @@ from a spatially scrambled pattern with the same marginal factor values.
 %	\text{Gene D}: & 0.1
 %	\end{array}
 %	\]
-%\end{minipage}
+%\end{minipage} 
+%}
+%\\ 
 %
-%\subsection*{Factor 2}
+%%\vspace{2mm}
 %
-%\begin{minipage}{0.45\textwidth}
-%	\centering Spatial pattern
-%	\[
-%	\begin{array}{cccc}
-%	\square&\square&\square&\blacksquare\\
-%	\square&\square&\blacksquare&\blacksquare\\
-%	\square&\blacksquare&\blacksquare&\blacksquare
-%	\end{array}
-%	\]
-%\end{minipage}
-%\begin{minipage}{0.45\textwidth}
-%	\centering Genes
-%	\[
+%and similarly for other factors.
+%
+%\subsubsection{NMF}
+%
+%%With the specified notation, NMF is
+%\[
+%Y_{i\mu}
+%\approx
+%\sum_{\alpha=1}^3
+%W_{i\alpha}H_{\alpha\mu}
+%\]
+%
+%For Factor 1, the example corresponds to
+%\[
+%W_{\cdot 1}
+%=
+%\begin{pmatrix}
+%0.9\\
+%0.8\\
+%0.7\\
+%0.1
+%\end{pmatrix}
+%\]
+%where the entries correspond to Genes A--D, and
+%\[
+%H_{1\cdot}
+%=
+%(1,1,1,1,1,1,1,0,1,1,0,0)
+%\]
+%
+%If we reshape \(H_{1\cdot}\) onto the \(3\times4\) tissue grid, we obtain
+%\[
+%\begin{pmatrix}
+%1&1&1&1\\
+%1&1&1&0\\
+%1&1&0&0
+%\end{pmatrix}
+%\]
+%
+%The crucial point is that NMF treats the entries of \(H_{1\cdot}\) as coefficients indexed by \(\mu\). It does not know that, for example, locations \(1\) and \(2\) are neighbors while locations \(1\) and \(12\) are far apart.
+%
+%Consider the two vectors
+%\[
+%H_{1\cdot}^{(A)}
+%=
+%(1,1,1,1,1,1,1,0,1,1,0,0)
+%\]
+%and
+%\[
+%H_{1\cdot}^{(B)}
+%=
+%(1,0,1,1,0,1,1,0,1,1,1,0)
+%\]
+%
+%They contain the same number of nonzero entries and, if the corresponding columns of \(Y\) are permuted in the same way, they give exactly the same NMF reconstruction error. NMF has no mechanism that prefers \(H^{(A)}\) because its nonzero entries form one spatially coherent region.
+%
+%More formally, for any permutation \(P\) of the spatial locations,
+%\[
+%Y\approx WH
+%\]
+%can be transformed into
+%\[
+%YP\approx W(HP)
+%\]
+%with exactly the same reconstruction error. Standard NMF is therefore invariant to permutations of the spatial locations. The spatial coordinates themselves do not enter the model.
+%
+%So, to NMF,
+%\[
+%\boxed{
+%	(1,1,1,1,1,1,1,0,1,1,0,0)
+%}
+%\]
+%and
+%\[
+%\boxed{
+%	(1,0,1,1,0,1,1,0,1,1,1,0)
+%}
+%\]
+%are just two possible coefficient vectors. Their spatial arrangement has no mathematical meaning to the factorization.
+%
+%\subsubsection{NSF}
+%
+%\[
+%Y_{i\mu}
+%=
+%\sum_{\alpha=1}^3
+%W_{\mu\alpha}~e^{f_{\alpha} (x_ \mu)}
+%\]
+%
+%For \textbf{factor 1}, the corresponding spatial contribution is
+%\[
+%W_{\mu1}~e^{f_{1}(x_\mu)}.
+%\]
+%
+%Here the factor is not simply an arbitrary vector of coefficients attached to the 12 locations. Its value is generated through the spatially indexed latent function
+%\[
+%f_{1}(x_\mu)
+%\]
+%
+%For the example, we could obtain a factor whose spatial expression is approximately
+%\[
+%\begin{pmatrix}
+%1&1&1&1\\
+%1&1&1&0\\
+%1&1&0&0
+%\end{pmatrix}
+%\]
+%
+%Thus the factor can be represented as
+%\[
+%\begin{array}{cccc}
+%\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
+%\blacksquare&\blacksquare&\blacksquare&\square\\
+%\blacksquare&\blacksquare&\square&\square
+%\end{array}
+%\]
+%together with its gene-associated weights.
+%
+%The distinction is that NSF has access to the coordinates \(x_\mu\), so the values
+%\[
+%f_1(x_1),~f_1(x_2),~\ldots,~f_1(x_{12})
+%\]
+%are values of a spatial latent function. Consequently, the model can distinguish between spatial configurations that NMF regards as equivalent.
+%
+%For example,
+%\[
+%f_1(x_\mu)
+%\quad\longrightarrow\quad
+%\begin{pmatrix}
+%1&1&1&1\\
+%1&1&1&0\\
+%1&1&0&0
+%\end{pmatrix}
+%\]
+%represents a spatially coherent region, whereas
+%\[
+%f_1(x_\mu)
+%\quad\longrightarrow\quad
+%\begin{pmatrix}
+%1&0&1&0\\
+%1&1&0&1\\
+%0&1&1&1
+%\end{pmatrix}
+%\]
+%represents a spatially fragmented pattern.
+%
+%Those two configurations are not equivalent under the NSF model because the spatial coordinates \(x_\mu\) enter the latent function.
+%
+%The cleanest statement is
+%\[
+%\boxed{
 %	\begin{array}{ll}
-%	\text{Gene A}: & 0.0\\
-%	\text{Gene B}: & 0.1\\
-%	\text{Gene C}: & 0.2\\
-%	\text{Gene D}: & 0.9
+%	\text{NMF:}
+%	&
+%	H_{1\cdot}=(h_{11},\ldots,h_{1N})
+%	\text{ is an arbitrary vector indexed by locations}
+%	\\[2mm]
+%	\text{NSF:}
+%	&
+%	e^{f_1(x_\mu)}
+%	\text{ is generated by a latent function of spatial location }x_\mu
 %	\end{array}
-%	\]
-%\end{minipage}
+%}
+%\]
 %
-%\subsection*{Factor 3}
+%Under NMF, permuting the spatial locations merely permutes the entries of \(H\) and does not change the mathematical status of the solution. 
 %
-%\begin{minipage}{0.45\textwidth}
-%	\centering Spatial pattern
-%	\[
-%	\begin{array}{cccc}
-%	\square&\square&\blacksquare&\square\\
-%	\square&\square&\blacksquare&\square\\
-%	\square&\square&\blacksquare&\square
-%	\end{array}
-%	\]
-%\end{minipage}
-%\begin{minipage}{0.45\textwidth}
-%	\centering Genes
-%	\[
-%	\begin{array}{ll}
-%	\text{Gene A}: & 0.2\\
-%	\text{Gene B}: & 0.8\\
-%	\text{Gene C}: & 0.0\\
-%	\text{Gene D}: & 0.3
-%	\end{array}
-%	\]
-%\end{minipage} \\ \\
+%Under NSF, where those values occur in space is part of the model itself.
 %
-%\noindent The model has therefore simultaneously discovered \textbf{spatial patterns} (where factors occur) and \textbf{gene associations} (which genes characterize those factors).
-
-
-\subsection{Hybrid Nonnegative Spatial Factorization}
-
-There is one last conceptual step we need to do. \textbf{Not every source of variation in gene expression is spatial}, nor two cells being neighbours implies similar gene expression between the two. This is the case, for example, of two neighboring cells whose gene expression is different because they are different cell types. Their difference will likely not be smoothly varying with position, as modelled by a GP. 
-
-\noindent\textbf{Hybrid Nonnegative Spatial Factorization} (\textbf{NSFH}) allows some factors to be spatial, others to be non spatial. Being $T$ the number of spatial factors and $L-T$ the number of nonspatial factors. full NSF is recovered when all factors are spatial ($T=L$), while probabilistic NMF is recovered when none are spatial ($T=0$).
+%This is the sense in which NSF can distinguish a coherent pattern such as
+%\[
+%\begin{array}{cccc}
+%\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
+%\blacksquare&\blacksquare&\blacksquare&\square\\
+%\blacksquare&\blacksquare&\square&\square
+%\end{array}
+%\]
+%from a spatially scrambled pattern with the same marginal factor values.
+%
+%
+%%Suppose NSF discovers $r=3$ factors. A typical outcome looks something like:
+%%
+%%\subsection*{Factor 1}
+%%
+%%\begin{minipage}{0.45\textwidth}
+%%	\centering Spatial pattern
+%%	\[
+%%	\begin{array}{cccc}
+%%	\blacksquare&\blacksquare&\blacksquare&\blacksquare\\
+%%	\blacksquare&\blacksquare&\blacksquare&\square\\
+%%	\blacksquare&\blacksquare&\square&\square
+%%	\end{array}
+%%	\]
+%%\end{minipage}
+%%\begin{minipage}{0.45\textwidth}
+%%	\centering Genes
+%%	\[
+%%	\begin{array}{ll}
+%%	\text{Gene A}: & 0.9\\
+%%	\text{Gene B}: & 0.8\\
+%%	\text{Gene C}: & 0.7\\
+%%	\text{Gene D}: & 0.1
+%%	\end{array}
+%%	\]
+%%\end{minipage}
+%%
+%%\subsection*{Factor 2}
+%%
+%%\begin{minipage}{0.45\textwidth}
+%%	\centering Spatial pattern
+%%	\[
+%%	\begin{array}{cccc}
+%%	\square&\square&\square&\blacksquare\\
+%%	\square&\square&\blacksquare&\blacksquare\\
+%%	\square&\blacksquare&\blacksquare&\blacksquare
+%%	\end{array}
+%%	\]
+%%\end{minipage}
+%%\begin{minipage}{0.45\textwidth}
+%%	\centering Genes
+%%	\[
+%%	\begin{array}{ll}
+%%	\text{Gene A}: & 0.0\\
+%%	\text{Gene B}: & 0.1\\
+%%	\text{Gene C}: & 0.2\\
+%%	\text{Gene D}: & 0.9
+%%	\end{array}
+%%	\]
+%%\end{minipage}
+%%
+%%\subsection*{Factor 3}
+%%
+%%\begin{minipage}{0.45\textwidth}
+%%	\centering Spatial pattern
+%%	\[
+%%	\begin{array}{cccc}
+%%	\square&\square&\blacksquare&\square\\
+%%	\square&\square&\blacksquare&\square\\
+%%	\square&\square&\blacksquare&\square
+%%	\end{array}
+%%	\]
+%%\end{minipage}
+%%\begin{minipage}{0.45\textwidth}
+%%	\centering Genes
+%%	\[
+%%	\begin{array}{ll}
+%%	\text{Gene A}: & 0.2\\
+%%	\text{Gene B}: & 0.8\\
+%%	\text{Gene C}: & 0.0\\
+%%	\text{Gene D}: & 0.3
+%%	\end{array}
+%%	\]
+%%\end{minipage} \\ \\
+%%
+%%\noindent The model has therefore simultaneously discovered \textbf{spatial patterns} (where factors occur) and \textbf{gene associations} (which genes characterize those factors).
+%
+%
+%\subsection{Hybrid Nonnegative Spatial Factorization}
+%
+%There is one last conceptual step we need to do. \textbf{Not every source of variation in gene expression is spatial}, nor two cells being neighbours implies similar gene expression between the two. This is the case, for example, of two neighboring cells whose gene expression is different because they are different cell types. Their difference will likely not be smoothly varying with position, as modelled by a GP. 
+%
+%\noindent\textbf{Hybrid Nonnegative Spatial Factorization} (\textbf{NSFH}) allows some factors to be spatial, others to be non spatial. Being $T$ the number of spatial factors and $L-T$ the number of nonspatial factors. full NSF is recovered when all factors are spatial ($T=L$), while probabilistic NMF is recovered when none are spatial ($T=0$).
 
 
 \section{Dimension-scalable Single-cell Perturbation Integration Network}
@@ -1027,7 +1161,7 @@ B &: \text{effects of perturbations on the network}
 
 \subsection{Step 1: oNMF}
 
-The first layer finds positive gene programs that can constitute a basis for the observed expression patterns. NMF is used
+The first layer finds positive gene programs that can constitute a basis for the observed expression patterns. oNMF is used
 \[
 Y \approx HW
 \qquad \qquad \qquad \qquad 
@@ -1045,14 +1179,14 @@ m &= \text{number of cells/samples} \\
 r &= \text{number of gene programs} 
 \end{align*}
 
-D-SPIN imposes an additional orthogonality constraint, resulting in the so-called \textbf{orthogonal Nonnegative Matrix Factorization} (\textbf{oNMF}). The additional restraint is applied to the activation/encoding matrix \textit{H}. Here, the concept of matrix orthogonality, which is well-defined in the context of square matrices, is used in a "broader" definition for non-square matrices
-\[
-H^T H = \identity_r
-\]
+%D-SPIN imposes an additional orthogonality constraint, resulting in the so-called \textbf{orthogonal Nonnegative Matrix Factorization} (\textbf{oNMF}). The additional restraint is applied to the activation/encoding matrix \textit{H}. Here, the concept of matrix orthogonality, which is well-defined in the context of square matrices, is used in a "broader" definition for non-square matrices
+%\[
+%H^T H = \identity_r
+%\]
+%
+%Without getting into details, orthogonality encourages different programs to be separated rather than repeatedly explaining the same expression variation.
 
-Without getting into details, orthogonality encourages different programs to be separated rather than repeatedly explaining the same expression variation.
-
-This is a modeling choice rather than a biological law. In real biology, the same gene can participate in multiple processes. Therefore, the non-overlap imposed by an orthogonal decomposition should be regarded as an interpretability constraint.
+It is worth stressing that this is a modeling choice rather than a biological law. In real biology, the same gene can participate in multiple processes. Therefore, the non-overlap imposed by an orthogonal decomposition should be regarded as an interpretability constraint.
 
 
 \subsection{Step 2: From gene programs to program networks}
@@ -1071,12 +1205,12 @@ For a particular cell $i$, let
 \[
 \bm{s^i}
 =
-(s_1^{i},~\ldots,~s_k^{i})
+(s_1^{i},~\ldots,~s_k^{i}), \qquad i = 1,~\dots,~r
 \]
 
 denote its program-level state (encoding).
 
-At this point, an important conceptual change occurs. NMF asks:
+At this point, an important conceptual change occurs. oNMF asks:
 
 \begin{quote}
 	\textit{How much of each program is present?}
@@ -1501,7 +1635,7 @@ Thus, perturbations provide information that is not available from observational
 
 \section{Introduction to the thesis use-case}
 
-\subsection{Perturb-seq and single-cell genetic perturbation profiling}
+\subsection{Single-cell genetic perturbation profiling}
 
 Understanding how genes control cellular phenotypes requires methods that can
 connect a specific genetic perturbation to its molecular consequences. Classical
@@ -1517,15 +1651,28 @@ single-cell transcriptomics, thereby enabling the molecular consequences of
 many perturbations to be measured simultaneously
 \cite{dixit2016perturbseq}.
 
-In a Perturb-seq experiment, cells are exposed to a library of single-guide RNAs
+\subsubsection{scRNA-seq}
+
+Single-cell transcriptomic profiling enables the characterization of gene-expression programs at the resolution of individual cells. Unlike bulk RNA sequencing, which averages transcript abundance across heterogeneous cell populations, single-cell RNA sequencing (scRNA-seq) captures transcriptomes from individual cells, allowing cellular heterogeneity and rare populations to be resolved. Typically, cells are isolated or partitioned into individual reaction compartments, where RNA molecules are converted into cDNA and labelled with cell-specific barcodes. Sequencing data are subsequently processed to generate a gene-by-cell expression matrix, which can be analysed using dimensionality-reduction and clustering approaches to identify transcriptionally distinct cell states or populations. Additional analyses can characterize marker genes, cellular trajectories, and changes in gene-expression programs across experimental conditions. Consequently, single-cell transcriptomics provides a high-resolution framework for investigating cellular composition, functional heterogeneity, and dynamic transcriptional responses within complex biological systems.
+
+\subsubsection{CRISPR}
+
+CRISPR (Clustered Regularly Interspaced Short Palindromic Repeats) is a genome-engineering technology derived from a bacterial adaptive immune system. In its commonly used form, the CRISPR-associated nuclease Cas9 is guided to a specific DNA sequence by a single-guide RNA (sgRNA), where it introduces a targeted double-strand break. Cellular DNA-repair pathways can then be exploited to disrupt genes through small insertions or deletions, a strategy known as CRISPR knockout (CRISPR-KO), or to introduce defined sequence changes. In contrast, CRISPR interference (CRISPRi) uses a catalytically inactive Cas protein (dCas9) to bind regulatory regions and sterically hinder transcription, reducing gene expression without altering the underlying DNA sequence.
+
+CRISPRa (CRISPR activation) extends this principle to transcriptional regulation without altering the underlying DNA sequence. It uses a catalytically inactive Cas protein (dCas9) fused to, or recruited alongside, transcriptional activation domains. Guided to promoter or enhancer regions by an sgRNA, the dCas9-based complex increases transcription of the targeted gene. CRISPRa therefore enables programmable, reversible modulation of endogenous gene expression while preserving genomic sequence integrity.
+
+\subsubsection{Perturb-seq}
+
+Perturb-seq (Perturbation-sequencing) is a high-throughput approach that combines pooled genetic perturbations with single-cell RNA sequencing to link specific perturbations to their transcriptional consequences at single-cell resolution. In a Perturb-seq experiment, cells are exposed to a library of single-guide RNAs
 (sgRNAs), with each guide targeting a particular gene or regulatory element.
 The perturbation identity is subsequently associated with the transcriptome of
 the same cell. Consequently, every sequenced cell can be regarded as an
 individual perturbation-response measurement: the sgRNA defines the
 experimental intervention, while the expression profile provides a
-high-dimensional phenotype. The original Perturb-seq implementation used an
-expressed guide barcode to connect the perturbation to the cell barcode and
-its corresponding transcriptome \cite{dixit2016perturbseq}.
+high-dimensional phenotype. 
+%The original Perturb-seq implementation used an
+%expressed guide barcode to connect the perturbation to the cell barcode and
+%its corresponding transcriptome \cite{dixit2016perturbseq}.
 
 This experimental design provides an important conceptual advantage over bulk
 measurements. A perturbation does not necessarily produce a homogeneous
@@ -1549,11 +1696,12 @@ action of individual genes.
 \subsection{The Norman et al.\ Perturb-seq experiment}
 
 A particularly influential application of Perturb-seq was presented by Norman
-et al.\ in 2019 in the study \emph{Exploring genetic interaction manifolds
-	constructed from rich single-cell phenotypes} \cite{norman2019}. The authors
+et al.\ in 2019 in the study \textit{"Exploring genetic interaction manifolds
+	constructed from rich single-cell phenotypes"} \cite{norman2019}. The authors
 investigated genetic interactions in human K562 cells using CRISPR activation
-(CRISPRa) and single-cell transcriptomic profiling. Unlike CRISPR knockout or
-CRISPR interference, CRISPRa is a gain-of-function approach: rather than
+(CRISPRa) and single-cell transcriptomic profiling. 
+
+Unlike CRISPR knockout or CRISPR interference, CRISPRa is a gain-of-function approach: rather than
 reducing the expression of a target gene, it activates endogenous gene
 expression. This distinction is important when interpreting the resulting
 phenotypes, since the measured response corresponds to increased activity of
@@ -1580,7 +1728,7 @@ The central conceptual contribution of the study was to regard each
 transcriptional phenotype as a point in a high-dimensional space. Instead of
 assigning a single scalar genetic-interaction score to a gene pair, the
 transcriptional response provides a vector containing the expression levels of
-many genes. The collection of these vectors was termed a \emph{genetic
+many genes. The collection of these vectors was termed a \textit{genetic
 	interaction manifold}. Dimensionality-reduction techniques such as UMAP could
 then be used to visualize relationships between perturbations. Perturbations
 producing similar transcriptional states were positioned close to one another,
@@ -1593,8 +1741,8 @@ allowing the authors to infer relationships between regulatory pathways.
 Furthermore, the rich phenotype could distinguish different mechanistic
 origins of genetic interactions that would appear similar in a conventional
 fitness-based screen. One notable result was the identification and
-characterization of a synergistic interaction involving \emph{CBL} and
-\emph{CNN1}, which was associated with erythroid differentiation
+characterization of a synergistic interaction involving CBL and
+CNN1, which was associated with erythroid differentiation
 \cite{norman2019}.
 
 The Norman et al.\ dataset therefore illustrates an important transition in
@@ -1609,26 +1757,99 @@ available through Figshare \cite{weinberger2024figshare}. This resource was
 published by Ethan Weinberger and is explicitly described as
 ``Preprocessed CRISPRa Perturb-seq data from Norman et al., 2019'', prepared
 for the study introducing ContrastiveVI+ \cite{weinberger2024}. The original
-experimental data are available through GEO under accession GSE133344
-\cite{norman2019geo}.
+experimental data are available through GEO under accession \href{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE133344}{GSE133344}
+\cite{norman2019geo}. Preprocessed data is available \href{https://figshare.com/articles/dataset/Norman_et_al_2019_Perturb-seq/27766323?file=50533869}{here} at the time of thesis writing.
 
-The distinction between the original dataset and the Figshare resource is
-important. The Figshare object is not raw sequencing data and therefore does
+\subsubsection{Preprocessing}
+
+The Figshare object is not raw sequencing data and therefore does
 not require reconstruction of the complete experimental processing pipeline
 from sequencing reads. Instead, it provides a single-cell expression matrix
 together with cell-level metadata in a form suitable for computational
 analysis. In particular, the dataset is distributed as a processed
 single-cell data object and has been used in subsequent computational studies
-of perturbation responses \cite{weinberger2024figshare}.
+of perturbation responses \cite{weinberger2024figshare}. Preprocessing can be summarized as follows.
 
-The underlying Norman dataset contains cells subjected to zero, one, or two
-target-gene perturbations. Subsequent analyses of the GSE133344 data have
-reported approximately 110,000 cells and thousands of measured genes, with
-236 distinct genetic perturbation conditions affecting 105 target genes in
-one processed representation of the dataset \cite{yu2025}. The exact number
-of cells and genes available to an analysis depends on the preprocessing and
-filtering steps applied, and should therefore be reported explicitly for the
-particular Figshare file used in a thesis.
+First, cells associated with a specific problematic control perturbation were excluded. Cells identified as doublets or multiplets were subsequently removed using the available cell-level metadata. Control-guide cells were retained, whereas non-control cells were retained when their perturbations had an associated gene-program annotation provided by Norman et al. This procedure restricted the analysis to cells belonging either to the control population or to perturbations with defined biological effects.
+
+The retained perturbations were associated with several transcriptional programs described in the original study, including erythroid, granulocyte/apoptosis, pioneer-factor, pro-growth, megakaryocyte, and G1 cell-cycle-arrest responses. Thus, the resulting dataset represents a biologically annotated subset of the original experiment rather than the complete Norman et al. dataset.
+
+After cell-level filtering, highly variable genes were identified using Scanpy's highly-variable-gene procedure with the Seurat v3 method. Weinberger et al. selected the top 2,000 highly variable genes for their analysis. The resulting expression representation was then used as input to ContrastiveVI+, which separates variation shared across experimental conditions from variation associated with perturbation-specific responses.
+
+Overall, the preprocessing combines quality control, perturbation-based selection, biological annotation, and feature selection. These steps reduce technical and biological heterogeneity that is not directly relevant to the perturbation analysis while preserving control cells and annotated perturbation responses required for modelling perturbation-associated transcriptional variation. \\
+
+%\centering
+\begin{tikzpicture}[
+node distance=7mm,
+box/.style={
+	rectangle,
+	rounded corners,
+	draw,
+	align=center,
+	minimum width=5.0cm,
+	minimum height=0.85cm
+},
+branch/.style={
+	rectangle,
+	rounded corners,
+	draw,
+	align=center,
+	minimum width=4.0cm,
+	minimum height=0.85cm
+},
+arrow/.style={->, thick}
+]
+
+\node[box] (input) {
+	Original Perturb-seq dataset\\
+	Cell--gene expression matrix and experimental metadata
+};
+
+\node[box, below=of input] (specific) {
+	Exclusion of cells associated\\
+	with a problematic control perturbation
+};
+
+\node[box, below=of specific] (doublets) {
+	Removal of doublets and multiplets
+};
+
+\node[box, below=of doublets] (selection) {
+	Retained cell population
+};
+
+\node[branch, below left=8mm and 8mm of selection] (controls) {
+	Control cells
+};
+
+\node[branch, below right=8mm and 8mm of selection] (perturbed) {
+	Perturbed cells with\\
+	available biological annotations
+};
+
+\node[box, below=22mm of selection] (hvg) {
+	Highly variable gene selection\\
+	Seurat v3 method\\
+	Top 2,000 genes
+};
+
+\node[box, below=of hvg] (contrastive) {
+	Preprocessed expression data
+};
+
+\draw[arrow] (input) -- (specific);
+\draw[arrow] (specific) -- (doublets);
+\draw[arrow] (doublets) -- (selection);
+
+\draw[arrow] (selection) -- (controls);
+\draw[arrow] (selection) -- (perturbed);
+
+\draw[arrow] (controls) |- (hvg);
+\draw[arrow] (perturbed) |- (hvg);
+
+\draw[arrow] (hvg) -- (contrastive);
+
+\end{tikzpicture} \\
 
 The processed dataset is particularly convenient for downstream single-cell
 analysis because the perturbation identity is represented in the cell
@@ -1711,8 +1932,9 @@ single-cell resolution. A D-SPIN analysis can therefore use the perturbation
 identity in the cell metadata as the condition variable while using the
 expression matrix as the molecular phenotype.
 
-A practical analysis consists of several conceptual stages. First, cells and
-genes should be quality-controlled and the expression matrix transformed into
+A practical analysis plan consists of several conceptual stages. 
+
+First, cells and genes should be quality-controlled and the expression matrix transformed into
 a representation appropriate for D-SPIN. The D-SPIN implementation expects
 log-normalized single-cell expression data and condition labels identifying
 the perturbation associated with each cell. Matched control cells are
@@ -1723,9 +1945,10 @@ Second, the expression space can either be represented directly at the
 gene level or reduced to gene programs. D-SPIN provides an unsupervised
 orthogonal non-negative matrix factorization (oNMF) procedure for identifying
 such programs, although predefined biologically motivated gene sets can also
-be used \cite{jiang2023dspin}. Program-level modeling is particularly
-attractive for a master-thesis analysis because it reduces dimensionality and
-often makes the resulting network easier to interpret biologically.
+be used \cite{jiang2023dspin}.
+% \textcolor{red}{Program-level modeling is particularly
+%attractive for a master-thesis analysis because it reduces dimensionality and
+%often makes the resulting network easier to interpret biologically.}
 
 Third, D-SPIN jointly infers the interaction network and the
 perturbation-response vectors. The resulting network can then be
@@ -1753,16 +1976,332 @@ high-dimensional perturbation-response measurements; the preprocessed
 Figshare object provides these measurements in a computationally accessible
 form; and D-SPIN provides a probabilistic framework for integrating the
 different perturbation conditions into an interpretable network model. The
-result is a progression from \emph{perturbation} to \emph{transcriptional
-	phenotype} and finally to \emph{network-level interpretation}, which is the
-central rationale for using D-SPIN in the present study.
+result is a progression from perturbation to transcriptional
+	phenotype and finally to network-level interpretation, which is the
+central rationale for using D-SPIN in the present work.
 
+\newpage
 
 \section{Dataset description}
 
-\section{Analysis pipeline}
+The preprocessed dataset contains single-cell gene expression measurements together with cell-level annotations describing the corresponding perturbation, experimental batch, sequencing quality, and biological response. The expression matrix comprises 27,658 cells and 1,333 retained genes, with expression values represented as floating-point measurements. The matrix is sparse, with a large proportion of zero-valued entries, reflecting the characteristic sparsity of single-cell transcriptomic data.
 
-\section{Results}
+The perturbation metadata identify 81 distinct guide conditions, including control and targeted perturbations. The experiment contains both single-target and combinatorial perturbations, resulting in a heterogeneous set of perturbation conditions with unequal numbers of cells. This imbalance is relevant for downstream modeling, since perturbations represented by fewer cells provide less information for estimating their associated transcriptional response.
+
+Several quality-control variables are available in the metadata, including read counts, UMI counts, sequencing coverage, and indicators of coverage quality. The retained observations satisfy the available coverage criterion and correspond to individual cells rather than multiplets. These annotations therefore provide information that can be used to assess the reliability of the measurements before applying D-SPIN.
+
+In addition to perturbation identities, the dataset contains biological program annotations assigned to cells. These annotations distinguish control cells from several transcriptional response programs associated with cellular differentiation, growth, apoptosis, and cell-cycle states. They provide an additional biological interpretation of the perturbation responses and can be useful when evaluating the programs or network structures inferred from the expression data.
+
+The retained genes are accompanied by gene identifiers, gene names, and highly-variable-gene annotations. Consequently, the dataset provides a compact representation of the perturbation-induced transcriptional landscape while retaining the metadata required to relate molecular responses to experimental conditions. Together, these characteristics make the dataset suitable for the subsequent D-SPIN analysis, in which perturbation identities define the experimental conditions and gene expression measurements provide the observed molecular responses.
+
+%\section{Blind faith? No, thanks}
+
+\newpage
+
+\section{Running D-SPIN}
+
+A data analysis pipeline designed to apply D-SPIN principles to Weinberger's dataset has been developed using Python. 
+
+The complete code, together with complete instructions set, is available on \href{https://github.com/demetriomagatti/d_spin_oda_thesis/tree/master}{github}. Code is organized in a package-like way, without being a complete python package yet. The codebase is a set of tools and functionalities to wrap and analyze results produced by the protagonist of the work, which is the \texttt{pip} installable DSPIN package \textcolor{red}{reference here to https://github.com/JialongJiang/DSPIN}
+
+\subsection{Analysis summary}
+
+The analysis follows a stepwise workflow aimed at identifying and interpreting transcriptional programs from a perturbation-based single-cell dataset. The overall purpose is to move from the original cellular expression data toward a higher-level description of the biological programs activated or repressed by different perturbations, and to investigate how these programs relate to one another. The analysis combines model validation, identification of characteristic genes, functional interpretation, comparison of program responses, and reconstruction of a network describing relationships between programs. 
+
+Analysis steps summarized hereafter are executed in sequence by the \texttt{main.py} file of the repository. 
+
+\textbf{1. Exploratory data analysis.} The first step consists of loading the previously prepared single-cell dataset and inspecting its general structure. This provides an overview of the available expression data and cell annotations and serves as an initial check that the dataset is suitable for the subsequent analysis. Before constructing the model, the experimental annotations are also standardized. In particular, information describing the perturbation applied to each cell is organized into a consistent sample identifier, control cells are explicitly distinguished from perturbed cells, and information about experimental batches is retained. This preparation ensures that the different perturbations, control observations, and experimental groups can be correctly recognized during the analysis.
+
+\textbf{2. Model generation.} The central part of the workflow is the construction of a model describing transcriptional programs and their relationships. Rather than considering the expression of thousands of genes independently, the analysis seeks to identify groups of genes that tend to vary together and can therefore be interpreted as coherent transcriptional programs. Each program represents a recurring pattern of gene activity that can be associated with particular cellular processes or responses. At the same time, the model captures how strongly these programs respond to the different perturbations in the dataset. The resulting representation therefore provides two complementary perspectives: what each program consists of and how each program behaves across experimental conditions.
+
+\textbf{3. Model validation.} Once the model has been generated, its basic validity is assessed. These checks are intended to ensure that the inferred programs and their associated results are internally consistent and suitable for further interpretation. A specific validation is also performed on the underlying matrix decomposition, verifying that the identified programs and their associated components have been generated appropriately. These steps are important because the subsequent biological conclusions depend on the quality and consistency of the inferred programs.
+
+\textbf{4. Characterization of program-associated genes.} The analysis then focuses on the genes associated with each program. For every program, the genes contributing most strongly to its definition are identified, providing a concise representation of its molecular characteristics. Examining these highly ranked genes offers an initial indication of the biological identity of each program. For example, a group of genes involved in a common cellular process may suggest that the corresponding program represents that process. In addition to these short lists of highly characteristic genes, the analysis retains a complete ranking of genes for every program. This more comprehensive representation is subsequently used to investigate the biological functions associated with each program.
+
+\textbf{5. Relationships between programs.} The relationships between programs are then examined by comparing their overall patterns. Programs that show similar behaviour are expected to have similar response profiles, whereas programs with opposing behaviour may represent contrasting cellular states or biological processes. A correlation analysis is therefore used to identify pairs of programs whose activities are strongly related. The strongest relationships are specifically examined to highlight potentially redundant, closely related, or biologically connected programs. This step helps determine whether the inferred programs represent clearly distinct processes or whether some of them capture related aspects of the same underlying cellular response.
+
+\textbf{6. Functional interpretation of programs.} The biological interpretation of the programs is further developed through enrichment analysis. The complete ranked gene lists are compared with known groups of genes associated with biological functions and processes. The purpose is to determine whether the genes defining a particular program are disproportionately associated with specific biological activities. The results are subsequently summarized to provide an overview of the main functional characteristics of the programs. This allows the analysis to move beyond individual marker genes and assess the broader biological meaning of each transcriptional program.
+
+\textbf{7. Program responses to perturbations.} A substantial part of the analysis is dedicated to understanding how the programs respond to the different perturbations. The relative activity of every program is examined across all experimental conditions, allowing perturbations that strongly activate or suppress particular programs to be identified. The strongest positive and negative responses are extracted to provide a concise overview of the most pronounced effects. This can reveal, for instance, which perturbations are associated with the strongest activation of a particular cellular process and which produce the opposite response.
+
+\textbf{8. Reciprocal and selective responses.} The response patterns are also examined for reciprocal behaviour. This analysis investigates whether some programs tend to increase when others decrease, which may indicate opposing or complementary biological responses. In parallel, summaries of program activation are generated to characterize the overall behaviour of the programs across the perturbation landscape. The selectivity of program activation is also assessed, with the aim of determining whether a program responds broadly to many perturbations or is associated more specifically with a smaller subset of conditions. Together, these analyses provide a more detailed picture of the functional specificity of the inferred programs.
+
+\textbf{9. Clustering of program responses.} The response patterns are subsequently visualized and compared through their correlations. Programs with similar responses across perturbations are grouped together, while programs with substantially different response patterns are separated. A hierarchical clustering analysis is used to organize the programs according to these similarities, providing an intuitive overview of groups of programs that behave in a comparable manner. Importantly, this classification is based on how the programs respond to perturbations rather than solely on the genes that constitute them. Consequently, programs that may have different molecular compositions can nevertheless be recognized as functionally related if they respond similarly to the same experimental perturbations.
+
+\textbf{10. Directed program network.} Finally, the analysis considers the programs as components of a directed network. In this representation, each program is treated as a node, while connections between nodes describe relationships inferred from the model. Weak relationships are filtered out so that the resulting network focuses on the stronger and more meaningful connections. The direction of the relationships is retained, allowing the network to represent not only whether two programs are connected but also the inferred directionality of their association.
+
+\textbf{11. Identification of program modules.} The network is further divided into modules, corresponding to groups of programs that are more strongly interconnected with one another. These modules provide a higher-level view of the organization of the inferred transcriptional programs and may represent groups of biological processes that participate in related cellular responses. The final network visualization therefore integrates several aspects of the preceding analysis into a single representation, showing how individual programs are connected and how they are organized into larger groups. 
+
+%\resizebox{\textwidth}{!}{%
+%\begin{tikzpicture}[
+%node distance=4mm,
+%box/.style={
+%	rectangle,
+%	rounded corners,
+%	draw,
+%	align=center,
+%	text width=7.5cm,
+%	minimum height=0.65cm,
+%	font=\small
+%},
+%branch/.style={
+%	rectangle,
+%	rounded corners,
+%	draw,
+%	align=center,
+%	text width=4.7cm,
+%	minimum height=0.65cm,
+%	font=\small
+%},
+%arrow/.style={->, thick}
+%]
+%
+%% Input
+%\node[box] (input) {
+%	\textbf{Original Perturb-seq dataset}\\
+%	Cell--gene expression matrix and experimental metadata
+%};
+%
+%% Exploratory analysis
+%\node[box, below=of input] (eda) {
+%	\textbf{Exploratory data analysis}\\
+%	Dataset inspection and standardization of perturbation, control, and batch annotations
+%};
+%
+%% Model
+%\node[box, below=of eda] (model) {
+%	\textbf{Model generation}\\
+%	Inference of transcriptional programs and their perturbation responses
+%};
+%
+%% Validation
+%\node[box, below=of model] (validation) {
+%	\textbf{Model validation}\\
+%	Internal consistency checks and validation of matrix decomposition
+%};
+%
+%% Program characterization
+%\node[box, below=of validation] (genes) {
+%	\textbf{Program-associated genes}\\
+%	Identification of characteristic genes and complete gene rankings
+%};
+%
+%% Two branches
+%\node[branch, below left=6mm and 7mm of genes] (relationships) {
+%	\textbf{Program relationships}\\
+%	Correlation analysis and strongest associations
+%};
+%
+%\node[branch, below right=6mm and 7mm of genes] (enrichment) {
+%	\textbf{Functional interpretation}\\
+%	Gene-set enrichment analysis
+%};
+%
+%% Responses
+%\node[box, below=15mm of genes] (responses) {
+%	\textbf{Program responses to perturbations}\\
+%	Identification of strongest activation and suppression across conditions
+%};
+%
+%% Response branches
+%\node[branch, below left=6mm and 7mm of responses] (reciprocal) {
+%	\textbf{Reciprocal responses}\\
+%	Opposing and complementary program activity
+%};
+%
+%\node[branch, below right=6mm and 7mm of responses] (selectivity) {
+%	\textbf{Selective responses}\\
+%	Broad versus perturbation-specific activation
+%};
+%
+%% Clustering
+%\node[box, below=15mm of responses] (clustering) {
+%	\textbf{Clustering of program responses}\\
+%	Correlation-based hierarchical clustering
+%};
+%
+%% Network
+%\node[box, below=of clustering] (network) {
+%	\textbf{Directed program network}\\
+%	Strong inferred relationships retained with directionality
+%};
+%
+%% Modules
+%\node[box, below=of network] (modules) {
+%	\textbf{Program modules}\\
+%	Groups of strongly interconnected programs
+%};
+%
+%% Final output
+%\node[box, below=of modules] (output) {
+%	\textbf{Integrated transcriptional program landscape}\\
+%	Programs, functions, perturbation responses, relationships, and modules
+%};
+%
+%% Main workflow
+%\draw[arrow] (input) -- (eda);
+%\draw[arrow] (eda) -- (model);
+%\draw[arrow] (model) -- (validation);
+%\draw[arrow] (validation) -- (genes);
+%
+%% First branch
+%\draw[arrow] (genes) -- (relationships);
+%\draw[arrow] (genes) -- (enrichment);
+%
+%\draw[arrow] (relationships) |- (responses);
+%\draw[arrow] (enrichment) |- (responses);
+%
+%% Second branch
+%\draw[arrow] (responses) -- (reciprocal);
+%\draw[arrow] (responses) -- (selectivity);
+%
+%\draw[arrow] (reciprocal) |- (clustering);
+%\draw[arrow] (selectivity) |- (clustering);
+%
+%% Final workflow
+%\draw[arrow] (clustering) -- (network);
+%\draw[arrow] (network) -- (modules);
+%\draw[arrow] (modules) -- (output);
+%
+%\end{tikzpicture}
+%}
+
+\subsection{Model specifics}
+
+The DSPIN package allows both to construct single-genes networks and gene programs networks. In the case of a gene program network fit, the package performs an initial oNMF operation to create gene programs and then proceeds to build the directional network. oNMF is per-se an algorithm depending on pseudo-random number generation, thus being subject to output differences if run multiple times. Consequently, the division of genes into gene programs can natively be repeated to verify the stability of the operation starting from different random seeds. The result is a \textit{consensus oNMF}. 
+
+The number of repetitions that generate the consensus result and the number of gene programs to split the genes into can be set by the user. At the time of writing of this thesis, no automatic detection of the optimal number gene programs is available in the DSPIN package, and developers suggest iteravitely increasing the number of gene programs and interpreting results. While acknowledging that the suggested approach is the one that should ultimately be followed for publishable work, both the generation of the consensus and the fitting of the directional network are computationally demanding processes. Given that this thesis represents a first exploration of DSPIN aimed at understanding its theoretical foundations and practical applications, relatively small numbers were used:
+
+\begin{itemize}
+	\item iterations for oNMF conseunsus: 25;
+	\item gene programs: 20.
+\end{itemize}
+
+\subsection{Consensus oNMF results}
+
+For each transcriptional program, the genes were ranked according to their weights in the corresponding oNMF component, with higher weights indicating a stronger association between a gene and the respective program. The three genes with the highest weights were selected to provide a concise representation of the main genes contributing to each inferred program. The resulting top-ranked genes are reported in Table \ref{tab:program_top3_genes}, with the corresponding oNMF weights shown in parentheses. These weights are relative measures of the contribution of each gene to the respective program and were therefore used to identify the genes most strongly associated with each transcriptional component.
+
+\begin{table}[htbp]
+	\centering	
+%	\fontsize{0.6\dimexpr\the\fontdimen6\font\relax}{1.1\baselineskip}\selectfont
+	\smaller[1]
+	\renewcommand{\arraystretch}{1.2}
+	\resizebox{\textwidth}{!}{%
+%		\begin{tabular}{cccc}
+		\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} cccc }
+			\hline
+			\textbf{Program} & \textbf{Gene} 1 & \textbf{Gene} 2 & \textbf{Gene} 3 \\
+			\hline
+			1  & YBX1 (0.3064) & ATP5I (0.2258) & PTMA (0.1822) \\
+			2  & HIST1H4C (0.3324) & KIAA0101 (0.2744) & TYMS (0.2180) \\
+			3  & CKS2 (0.2264) & CENPF (0.2100) & BIRC5 (0.2078) \\
+			4  & AP1S2 (0.2596) & EVA1B (0.2554) & ARHGDIB (0.2393) \\
+			5  & LST1 (0.2364) & TYROBP (0.2166) & CSF3R (0.2138) \\
+			6  & ENO1 (0.2095) & SSBP1 (0.1451) & UFD1L (0.1446) \\
+			7  & GYPA (0.3021) & GYPB (0.3013) & HBG2 (0.3006) \\
+			8  & UBE2L3 (0.2302) & NDUFS5 (0.2071) & ATP5G3 (0.2006) \\
+			9  & HBA1 (0.5772) & HBA2 (0.4449) & HEMGN (0.3868) \\
+			10 & SOCS2 (0.3576) & S100A13 (0.3002) & MAP1A (0.2026) \\
+			11 & GAL (0.3011) & HBQ1 (0.2639) & HK1 (0.2506) \\
+			12 & RPL14 (0.3822) & RPS5 (0.3763) & MT-ND2 (0.3574) \\
+			13 & CYCS (0.1853) & SLIRP (0.1836) & PA2G4 (0.1799) \\
+			14 & CDK1 (0.3287) & PIF1 (0.3004) & GTSE1 (0.2647) \\
+			15 & PLK1 (0.3106) & CDC20 (0.3076) & CCNB1 (0.2950) \\
+			16 & ALAS2 (0.3343) & TSC22D1 (0.2918) & AC006262.5 (0.2830) \\
+			17 & CLC (0.4520) & SRGN (0.4480) & NCF1 (0.4320) \\
+			18 & CD84 (0.5835) & COL9A2 (0.5339) & FYB (0.3678) \\
+			19 & WDR43 (0.2623) & NOP16 (0.2397) & GAR1 (0.2277) \\
+			20 & RP11-301G19.1 (0.2770) & S100A11 (0.1970) & SH3BGRL3 (0.1945) \\
+			\hline
+		\end{tabular*}%
+	}
+		\caption{Top three genes associated with each inferred transcriptional program. Gene strengths correspond to the gene weights assigned by the oNMF model.}
+		\label{tab:program_top3_genes}			
+\end{table}
+
+
+\subsubsection{Enrichment}
+
+Following the characterization of the genes associated with each transcriptional program, over-representation analysis (ORA) was performed to investigate the biological processes represented within the inferred programs. For each program, the 100 highest-ranked genes were tested against the Gene Ontology (GO) Biological Process 2023 gene sets using the genes detected in the dataset as the background. GO terms with an adjusted $p$-value below 0.05 were considered significantly enriched. This analysis therefore provided an independent functional characterization of the transcriptional programs based on the biological processes over-represented among their constituent genes.
+
+Several programs displayed highly coherent functional enrichments. ORA results are summarized in Table \ref{tab:ora_summary}.
+
+\textbf{Program 1} was significantly associated with RNA-related processes, including mRNA processing, mRNA splicing via the spliceosome, RNA splicing, and protein--RNA complex assembly. The strongest enrichment was observed for mRNA processing (adjusted $p = 3.09\times10^{-5}$; odds ratio = 11.87), consistent with the presence of RNA-associated genes such as \textit{YBX1}, \textit{SNRPG}, and \textit{SNRPE}. 
+
+\textbf{Program 2} showed a strong DNA replication and repair signature, with significant enrichment for DNA damage response, DNA metabolic process, DNA repair, DNA-templated DNA replication, and double-strand break repair via homologous recombination. DNA-templated DNA replication showed an odds ratio of 35.65, while DNA repair had an adjusted $p$-value of $3.24\times10^{-7}$, supporting the interpretation of this program as a DNA replication and repair-associated state.
+
+\textbf{Program 3} exhibited a strong cell-cycle and mitotic signature. Significant terms included mitotic sister chromatid segregation, regulation of the cell cycle, positive regulation of cell-cycle processes, and mitotic spindle organization. The enrichment for positive regulation of the cell cycle was particularly strong (odds ratio = 23.30; adjusted $p = 3.28\times10^{-10}$). This functional profile was consistent with the presence of genes including \textit{CENPF}, \textit{BIRC5}, \textit{TOP2A}, \textit{TPX2}, and \textit{CCNA2}. 
+
+\textbf{Program 5} showed enrichment for hematopoietic and immune-associated processes, including regulation of T-cell-mediated cytotoxicity and hemopoiesis. These findings were consistent with its expression of genes such as \textit{LST1}, \textit{TYROBP}, \textit{CSF3R}, \textit{MS4A3}, and \textit{CEBPE}.
+
+\textbf{Program 7} displayed a characteristic erythroid and gas-transport signature. Significant terms included oxygen transport, carbon dioxide transport, gas transport, and one-carbon compound transport, all with an adjusted $p$-value of approximately 0.039 and an odds ratio of 25.65. These enrichments were supported by the presence of erythroid-associated genes such as \textit{GYPA}, \textit{GYPB}, \textit{HBG2}, \textit{HBZ}, \textit{HBG1}, and \textit{SLC25A37}. 
+
+\textbf{Program 8} was associated with proteostasis and metabolic processes, including proteasome-mediated ubiquitin-dependent protein catabolism, ubiquitin-dependent protein catabolic processes, proteasomal protein catabolism, and cellular respiration. These enrichments were consistent with genes such as \textit{UBE2L3}, \textit{POMP}, \textit{PSMA7}, \textit{NDUFS5}, and \textit{COX5A}.
+
+\textbf{Program 9} showed enrichment for antigen processing and presentation of endogenous antigens, together with processes related to smooth-muscle and vascular-associated smooth-muscle proliferation. Its gene composition included \textit{HBA1}, \textit{HBA2}, \textit{HEMGN}, \textit{CNN1}, and \textit{AHSP}, indicating a complex blood- and erythroid-associated transcriptional signature. 
+
+\textbf{Program 13} was characterized by mitochondrial processes, including protein targeting to mitochondria, insertion of proteins into the mitochondrial membrane, mitochondrial gene expression, mitochondrial organization, and translation. Protein insertion into the mitochondrial membrane showed an odds ratio of 32.39, while the enrichment of mitochondrial gene expression reached an adjusted $p$-value of 0.0119.
+
+\textbf{Programs 14 and 15} were predominantly associated with cell-cycle and mitotic functions. Although Program 14 also produced an enrichment for antigen processing and presentation, its leading genes, including \textit{CDK1}, \textit{PIF1}, \textit{GTSE1}, \textit{HJURP}, and \textit{KIFC1}, were more consistent with chromosome dynamics and cell-cycle progression. Program 15 showed significant enrichment for regulation of the mitotic metaphase/anaphase transition and positive regulation of microtubule polymerization. The latter process showed a particularly high odds ratio of 51.33 and was supported by genes including \textit{PLK1}, \textit{CDC20}, \textit{CCNB1}, \textit{CENPE}, and \textit{DLGAP5}.
+
+\textbf{Program 17 and Program 18} displayed immune and hematopoietic associated characteristics. Program 17 was associated with antigen processing and presentation and contained genes including \textit{CLC}, \textit{SRGN}, \textit{NCF1}, \textit{CEBPA}, and \textit{PRG2}. Program 18 also showed enrichment for antigen processing and presentation, consistent with genes such as \textit{CD84}, \textit{FYB}, \textit{ITGAM}, and \textit{CD48}. 
+
+\textbf{Program 19} showed a particularly coherent ribosome-related signature, with significant enrichment for ribosome biogenesis, ribonucleoprotein complex biogenesis, and ribosomal large-subunit biogenesis. These findings were consistent with the presence of \textit{WDR43}, \textit{NOP16}, \textit{GAR1}, \textit{RRP1B}, and \textit{DKC1}.
+
+Finally, \textbf{Program 20} was significantly associated with inflammatory and host-defense processes, including positive regulation of the inflammatory response, regulation of the inflammatory response, defense response to bacterium, and positive regulation of defense response. The strongest terms had adjusted $p$-values of approximately $3.06\times10^{-3}$ and odds ratios of 18.49. The presence of genes such as \textit{LAPTM5}, \textit{VIM}, \textit{PYCARD}, and \textit{BTG1} further supported an immune- and stress-associated interpretation.
+
+Not all programs produced significant GO Biological Process enrichments. In particular, programs 4, 6, 10, 11, 12, and 16 did not contain terms that passed the adjusted $p$-value threshold of 0.05. The absence of significant enrichment does not imply that these programs lack biological relevance; rather, their constituent genes did not form sufficiently large or specific overlaps with the tested GO categories under the applied statistical threshold. Their interpretation was therefore based primarily on their gene composition and was considered separately from the ORA results.
+
+Overall, the enrichment analysis demonstrated that a substantial proportion of the inferred transcriptional programs corresponded to coherent biological processes. Programs associated with RNA processing, DNA replication and repair, cell-cycle progression, erythroid function, mitochondrial activity, ribosome biogenesis, and inflammatory responses were identified. These findings provided functional support for the inferred programs and demonstrated that the transcriptional decomposition captured biologically interpretable cellular processes rather than only mathematical patterns in the expression data.
+
+\begin{table}[htbp]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\setlength{\tabcolsep}{6pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} cccl }
+		\hline
+		& \textbf{Program} & \textbf{Main biological processes} & \\
+		\hline
+		& \enrichedbox\makebox[0.3cm][r]{1}  & RNA processing and RNA splicing & \\
+		& \enrichedbox\makebox[0.3cm][r]{2}  & DNA replication, DNA repair and DNA damage response & \\
+		& \enrichedbox\makebox[0.3cm][r]{3}  & Cell cycle and mitotic chromosome segregation & \\
+		& \notenrichedbox\makebox[0.3cm][r]{4}  & No significant GO Biological Process terms & \\
+		& \enrichedbox\makebox[0.3cm][r]{5}  & Hemopoiesis and immune/cytotoxicity-related processes & \\
+		& \notenrichedbox\makebox[0.3cm][r]{6}  & No significant GO Biological Process terms & \\
+		& \enrichedbox\makebox[0.3cm][r]{7}  & Oxygen, carbon dioxide and gas transport & \\
+		& \enrichedbox\makebox[0.3cm][r]{8}  & Proteasomal degradation and cellular respiration & \\
+		& \enrichedbox\makebox[0.3cm][r]{9}  & Antigen processing and vascular/smooth muscle-related processes & \\
+		& \notenrichedbox\makebox[0.3cm][r]{10} & No significant GO Biological Process terms & \\
+		& \notenrichedbox\makebox[0.3cm][r]{11} & No significant GO Biological Process terms & \\
+		& \notenrichedbox\makebox[0.3cm][r]{12} & No significant GO Biological Process terms & \\
+		& \enrichedbox\makebox[0.3cm][r]{13} & Mitochondrial function and mitochondrial gene expression & \\
+		& \enrichedbox\makebox[0.3cm][r]{14} & Antigen processing and presentation & \\
+		& \enrichedbox\makebox[0.3cm][r]{15} & Mitotic progression and microtubule organization & \\
+		& \notenrichedbox\makebox[0.3cm][r]{16} & No significant GO Biological Process terms & \\
+		& \enrichedbox\makebox[0.3cm][r]{17} & Antigen processing and presentation & \\
+		& \enrichedbox\makebox[0.3cm][r]{18} & Antigen processing and presentation & \\
+		& \enrichedbox\makebox[0.3cm][r]{19} & Ribosome and ribonucleoprotein biogenesis & \\
+		& \enrichedbox\makebox[0.3cm][r]{20} & Inflammatory and host-defense responses & \\
+		\hline
+	\end{tabular*}
+	\caption{Summary of GO Biological Process enrichment across the inferred transcriptional programs. A program was considered enriched when at least one GO term had an adjusted $p-\text{value}<0.05$. Overall, 14 of 20 programs showed at least one significantly enriched GO Biological Process term.}
+		\label{tab:ora_summary}
+	\end{table}
+
+
+\subsubsection{Programs correlation}
+
+\subsection{Relative responses to perturbations}
+
+\subsection{Directional network}
+
+
+%Following the initial inspection and preparation of the dataset, the resulting model was evaluated to verify its structure and the dimensions of the inferred components. The model identified 20 transcriptional programs, represented by a $20 \times 20$ network matrix, while the program responses and relative responses were represented across 78 experimental conditions, resulting in matrices of dimensions $20 \times 78$. The underlying non-negative matrix factorization (oNMF) model likewise comprised 20 components, with each component defined across 1,333 genes. The corresponding sample list contained the 78 perturbation conditions considered in the analysis. The model-object and oNMF validation checks confirmed that the expected model components were present and that their dimensions were consistent with the inferred number of transcriptional programs, genes, and experimental conditions. These results established the structural basis for the subsequent characterization and biological interpretation of the inferred programs.
+
+
+\newpage
+
+\section{Norman from D-SPIN, and a little more}
 
 
 \end{document}
