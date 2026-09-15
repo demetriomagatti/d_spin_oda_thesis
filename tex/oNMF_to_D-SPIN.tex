@@ -105,7 +105,7 @@
 
 \section{Nonnegative Matrix Factorization for transcriptomics}
 
-This section is based on the \textit{Learning the parts of objects by nonnegative matrix factorization} paper by D. D. Lee and H. S. Seung, expanded to cover genomics-related applications. The goal here so to extract and highlight the key points, while avoiding deep-diving into optimization algorithms, loss functions to be minimized and so on. The original paper is obviously much more detailed when it comes to that.
+%This section is based on the \textit{Learning the parts of objects by nonnegative matrix factorization} paper by D. D. Lee and H. S. Seung, expanded to cover genomics-related applications. The goal here so to extract and highlight the key points, while avoiding deep-diving into optimization algorithms, loss functions to be minimized and so on. The original paper is obviously much more detailed when it comes to that.
 
 \subsection{Image-related NMF}
 
@@ -117,7 +117,7 @@ Each image can be flattened from 2 dimensions to 1 by collapsing it into a vecto
 Y \in \mathbb{R}_{\geq 0}^{n\times m}
 \]
 
-The image database \textit{Y} is regarded as an $n \times m$ matrix V , each column of which contains \textit{n} nonnegative pixel
+The image database \textit{Y} is regarded as an $n \times m$ matrix V, each column of which contains \textit{n} nonnegative pixel
 values of one of the \textit{m} facial images. 
 
 The goal of \textbf{Nonnegative Matrix Factorization} (\textbf{NMF}) is to decompose \textit{Y} in a structure like 
@@ -142,75 +142,88 @@ W\in\mathbb{R}_{\geq0}^{r\times m}
 
 The columns of \textit{W} are called basis images. Each column of \textit{H} is called an encoding, and is in one-to-one
 correspondence with a face in \textit{Y} . An encoding consists of the coefficients by which a face is represented with
-a linear combination of basis images. 
-
-This nonnegativity constraint is what makes NMF different from ohter dimensionality reduction techniques like Principal Component Analysis. These constraints permit the combination of multiple basis images to represent a face, with the key point of only allowing additive combinations. In contrast to PCA, no subtractions can occur. For these reasons, the nonnegativity constraints are compatible with the intuitive notion of combining parts to form a whole, which is how NMF learns a part-based representation.
-
-\textcolor{red}{Add citation in introduction and also figures that compare PCA to NMF.}
+a linear combination of basis images. Conceptually, NMF is not fundamentally different from other dimensionality-reduction techniques such as PCA: its goal is to extract a set of latent “features” that can be combined to provide a faithful reconstruction of the original data. The key difference is the nonnegativity constraint, which restricts the reconstruction to additive combinations of these features.
 
 \begin{figure}[h]
 	\centering
 	\setlength{\abovecaptionskip}{2pt}
-\[
-\begin{array}{c@{\qquad}c}
-\begin{array}{c}
-\textbf{PCA}\\[4pt]
-X\approx
-\underbrace{
-	\begin{array}{|cc|}
-	\hline
-	+&-\\
-	+&+\\
-	-&+\\
-	-&-\\
-	\hline
-	\end{array}}_{U}
-\;
-\underbrace{
-	\begin{array}{|cccc|}
-	\hline
-	+&+&-&-\\
-	-&+&+&-\\
-	\hline
-	\end{array}}_{V^\top}
-\\[8pt]
-%\downarrow\\[-2pt]
-\\[-8pt]
-\text{signed directions}\\
-\text{addition or subtraction allowed}
-\end{array}
-&
-\qquad \qquad
-\begin{array}{c}
-\textbf{NMF}\\[4pt]
-X\approx
-\underbrace{
-	\begin{array}{|cc|}
-	\hline
-	+&0\\
-	+&+\\
-	0&+\\
-	0&+\\
-	\hline
-	\end{array}}_{W}
-\;
-\underbrace{
-	\begin{array}{|cccc|}
-	\hline
-	+&+&+&0\\
-	+&0&0&+\\
-	\hline
-	\end{array}}_{H}
-\\[8pt]
-%\downarrow\\[-2pt]
-\\[-8pt]
-\text{non-negative parts}\\
-\text{additive only}
-\end{array}
-\end{array}
-\]
-    \caption{Comparison of PCA and non-negative matrix factorization (NMF).}
-\label{fig:pca_vs_nmf}
+	\[
+	\begin{array}{c@{\qquad}c}
+	\begin{array}{c}
+	\textbf{PCA}\\[4pt]
+	X\approx
+	\underset{H}{
+		\begin{array}{|cc|}
+		\hline
+		+&-\\
+		+&+\\
+		-&+\\
+		-&-\\
+		\hline
+		\end{array}}
+	\;
+	\underset{W}{
+		\begin{array}{|cccc|}
+		\hline
+		+&+&-&-\\
+		-&+&+&-\\
+		\hline
+		\end{array}}
+	\\[8pt]
+	%\downarrow\\[-2pt]
+	\\[-8pt]
+	\text{signed directions}\\
+	\text{addition or subtraction allowed}
+	\end{array}
+	&
+	\qquad \qquad
+	\begin{array}{c}
+	\textbf{NMF}\\[4pt]
+	X\approx
+	\underset{H}{
+		\begin{array}{|cc|}
+		\hline
+		+&0\\
+		+&+\\
+		0&+\\
+		0&+\\
+		\hline
+		\end{array}}
+	\;
+	\underset{W}{
+		\begin{array}{|cccc|}
+		\hline
+		+&+&+&0\\
+		+&0&0&+\\
+		\hline
+		\end{array}}
+	\\[8pt]
+	%\downarrow\\[-2pt]
+	\\[-8pt]
+	\text{non-negative parts}\\
+	\text{additive only}
+	\end{array}
+	\end{array}
+	\]
+	\caption{Comparison of PCA and non-negative matrix factorization (NMF).}
+	\label{fig:pca_vs_nmf_schematic}
+\end{figure}
+
+The nonnegativity constraint plays a central role in determining the type of representation learned by NMF. Since both the basis images and their coefficients are nonnegative, the original image can only be reconstructed by adding the learned components together. This encourages each component to capture distinct, localized structures that can be combined to reconstruct the whole image, leading naturally to a part-based representation. Unlike methods that allow positive and negative contributions to cancel each other, NMF therefore tends to learn features corresponding to meaningful image parts.
+
+%The nonnegativity constraint plays a central role in determining the type of representation learned by NMF. Since both the basis images and their coefficients are constrained to be nonnegative, the original image can only be reconstructed by adding the learned components together. In this setting, each component can capture a distinct part of the image, and different parts can be combined to reconstruct the whole. This leads naturally to the intuitive notion of combining parts to form a whole, which is how NMF learns a part-based representation. Learned features correspond to meaningful and localized structures rather than to combinations involving both positive and negative contributions.
+
+%This nonnegativity constraint is what makes NMF different from ohter dimensionality reduction techniques like Principal Component Analysis. These constraints permit the combination of multiple basis images to represent a face, with the key point of only allowing additive combinations. In contrast to PCA, no subtractions can occur. For these reasons, the nonnegativity constraints are compatible with the intuitive notion of combining parts to form a whole, which is how NMF learns a part-based representation.
+
+\textcolor{red}{Add citation in introduction and also figures that compare PCA to NMF.}
+
+
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.9\textwidth]{img/PCA_NMF.pdf}
+	\caption{Image decomposition. PCA constructs a set of \textit{eigenfaces}, while NMF favours a parts-based representation}.
+	\label{fig:pca_vs_nmf_faces}
 \end{figure}
 
 \subsection{Bridging to genomics}
