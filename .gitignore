@@ -3,3 +3,4 @@ results/models
 .vscode
 __pycache__
 *.pyc
+code/tex_contents/

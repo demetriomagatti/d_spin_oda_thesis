@@ -215,7 +215,7 @@ The nonnegativity constraint plays a central role in determining the type of rep
 
 %This nonnegativity constraint is what makes NMF different from ohter dimensionality reduction techniques like Principal Component Analysis. These constraints permit the combination of multiple basis images to represent a face, with the key point of only allowing additive combinations. In contrast to PCA, no subtractions can occur. For these reasons, the nonnegativity constraints are compatible with the intuitive notion of combining parts to form a whole, which is how NMF learns a part-based representation.
 
-\textcolor{red}{Add citation in introduction and also figures that compare PCA to NMF.}
+\textcolor{red}{Add citation somewhwere.}
 
 
 
@@ -1427,7 +1427,7 @@ The magnitude ($\lvert J_{ij}\rvert$) describes the strength of this interaction
 Let's go back to spins and statistical mechanics. We have our spin system and we now add an external perturbation. In statistical mechanics, a particularly simple perturbation is an additional external field acting on the spins.
 Suppose we apply a field $b_i$ to spin $i$. The field contributes an additional term to the energy of the micro-state
 \[
--\beta E(\bm s \mid \bm s)  = 
+-\beta E(\bm s \mid \bm b)  = 
 \sum_i h_i s_i
 +
 \sum_{i<j}J_{ij}s_is_j
@@ -2302,19 +2302,507 @@ Overall, the enrichment analysis demonstrated that a substantial proportion of t
 	\end{table}
 
 
-\subsubsection{Programs correlation}
+\subsubsection{Programs correlation (cell-level)}
+
+%To further characterize the relationships between the inferred transcriptional programs, Pearson correlations were calculated between their program activity profiles. The resulting correlation matrix is shown in Figure \ref{fig:correlation}. Positive correlations indicate that the activities of two programs tend to increase or decrease together across the analyzed samples, whereas negative correlations indicate opposing patterns of activity.
+
+To further characterize the relationships between the inferred transcriptional programs, Pearson correlations were calculated between their \textbf{cell-level program activity profiles}. In this analysis, each program is represented by its activity across the individual cells in the dataset. Thus, the correlation between two programs measures whether they tend to show similar or opposing activity states in the \textbf{same cells}. Positive correlations indicate that two programs tend to be active in the same cells, whereas negative correlations indicate that high activity of one program tends to be associated with lower activity of the other. Although the cells are assigned to different perturbation conditions, the perturbation label is not the unit of observation in this analysis; the correlations are calculated directly across individual cells. The resulting correlation matrix is shown in Figure \ref{fig:correlation}.
+
+\begin{figure}[h]
+	\centering
+	\setlength{\abovecaptionskip}{2pt}
+	\[
+	\begin{array}{c}
+	\textbf{Cell-level program correlation}\\[6pt]
+	\underset{\text{}}{
+		\begin{array}{|c|cccc|}
+		\hline
+		& P_1 & P_2 & \cdots & P_K\\
+		\hline
+		c_1 & +1 & 0  & \cdots & +1\\
+		c_2 & +1 & +1 & \cdots & 0\\
+		c_3 & 0  & +1 & \cdots & +1\\
+		c_4 & -1 & 0  & \cdots & -1\\
+		\vdots & \vdots & \vdots & & \vdots\\
+		c_N & +1 & +1 & \cdots & 0\\
+		\hline
+		\end{array}}
+	\\[8pt]
+	\text{Each program is represented by its activity across cells}\\[4pt]
+	P_i=(P_{i,c_1},P_{i,c_2},\ldots,P_{i,c_N})\\[8pt]
+	\Downarrow\\[-2pt]
+	r_{ij}=\operatorname{cor}(P_i,P_j)\\[8pt]
+	\textbf{Interpretation:}\\
+	\text{similar or opposing activity of two programs in the same cells}
+	\end{array}
+	\]
+	\caption{Cell-level program correlation. Pearson correlations are calculated between inferred program activity profiles across individual cells. Each program is therefore represented by its activity values across the cells in the dataset. Positive correlations indicate that two programs tend to show similar activity states in the same cells, whereas negative correlations indicate opposing activity patterns.}
+	\label{fig:cell_level_program_correlation}
+\end{figure} 
+
+Several pairs of programs showed relatively strong positive correlations. The strongest association was observed between \textbf{Programs 1 and 13} ($r = 0.79$). Program 1 was characterized by RNA processing and splicing, whereas Program 13 was associated primarily with mitochondrial function and mitochondrial gene expression. Other strong positive correlations included \textbf{Programs 6 and 8} ($r = 0.73$), \textbf{Programs 13 and 19} ($r = 0.71$), and \textbf{Programs 5 and 20} ($r = 0.68$). Programs 13 and 19 were particularly notable because both showed positive associations with several other programs, with Program 19, which was characterized by ribosome and ribonucleoprotein biogenesis, correlating with Program 13 at $r = 0.71$ and with Program 1 at $r = 0.63$.
+
+The cell-cycle-associated programs also displayed substantial positive correlations. Programs 3 and 14 showed a correlation of $r = 0.66$, while Programs 3 and 15 showed a correlation of $r = 0.66$. This pattern is consistent with the functional characterization of these programs, as Program 3 was associated with cell-cycle and mitotic processes, while Programs 14 and 15 were also characterized by genes involved in chromosome dynamics, mitotic progression, and microtubule organization. The correlation between Programs 14 and 15 was comparatively lower but still positive ($r = 0.45$).
+
+Several negative correlations were also observed. The strongest negative associations involved \textbf{Programs 6 and 16} ($r = -0.48$) and \textbf{Programs 13 and 20} ($r = -0.48$). Program 20, which was enriched for inflammatory and host-defense processes, also showed negative correlations with Programs 1 ($r = -0.46$), 11 ($r = -0.46$), and 7 ($r = -0.43$). Similarly, Program 5, which was associated with hematopoietic and immune-related processes, showed negative correlations with Programs 1 ($r = -0.45$), 13 ($r = -0.46$), and 19 ($r = -0.36$).
+
+The correlation structure therefore revealed groups of programs with coordinated activity as well as programs exhibiting opposing activity patterns. In particular, positive correlations were evident among several programs associated with proliferative, biosynthetic, mitochondrial, and ribosomal processes, whereas some immune- and hematopoietic-associated programs displayed negative associations with these transcriptional states. These relationships provide an additional perspective on the organization of the inferred programs, complementing the independent functional characterization obtained through GO enrichment analysis.
+
+Importantly, correlations between program activities describe statistical co-variation and should not be interpreted as evidence of direct regulatory interactions or causal relationships between programs. The observed associations may instead reflect shared cellular states, common variation across samples, or changes in the relative representation of different cellular populations.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=1\textwidth]{img/correlation.pdf}
+	\caption{Program correlation. Unordered program list (left), programs grouped according to enrichment analysis (right).}
+	\label{fig:correlation}
+\end{figure}
 
 \subsection{Relative responses to perturbations}
 
+To characterize the effects of the perturbations on the inferred transcriptional programs, we analyzed the relative-response matrix generated by D-SPIN. In this analysis, the relative response represents the perturbation-associated change in the inferred program response relative to the corresponding control response. Positive values therefore indicate an increased relative response, whereas negative values indicate a decreased relative response. The resulting response matrix is shown in Figure \ref{fig:relative_responses}. \\
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=1\textwidth]{img/relative_responses.pdf}
+	\caption{Relative responses of the inferred transcriptional programs to perturbations. Rows correspond to transcriptional programs and columns to perturbations.}
+	\label{fig:relative_responses}
+\end{figure} \\
+
+The distribution of relative responses revealed substantial differences in both the magnitude and selectivity of perturbation effects. Across the analyzed perturbations, \textbf{Program 5} showed the highest mean relative response (0.7873) and was positive for 55 perturbations. Its strongest responses were observed for CEBPE+SPI1 (3.3028), ctrl+CEBPE (3.1515), and JUN+CEBPA (3.1377). Program 5 was also strongly activated by several other CEBP-associated perturbations, including CEBPE+CEBPA (3.0262), CEBPE+CEBPB (3.1081), and CEBPB+CEBPA (2.6856).
+
+\textbf{Program 9} showed the second-highest mean response (0.4826) and was positive for 43 perturbations. Its strongest responses were observed for CBL+CNN1 (2.8713), UBASH3B+CNN1 (2.8543), and CNN1+UBASH3A (2.4281). A related pattern was observed for \textbf{Program 7}, which was positive for 49 perturbations and reached its highest responses for UBASH3B+CNN1 (2.0836), PTPN12+ZBTB25 (2.0787), and UBASH3B+ZBTB25 (1.9772). These profiles indicate recurrent responses involving Programs 7 and 9 across several perturbations affecting CBL-, UBASH3B-, PTPN12-, and CNN1-associated signaling.
+
+In contrast, some programs showed strong responses restricted to a smaller subset of perturbations. \textbf{Program 4} reached the highest individual relative-response value in the dataset for ETS2+MAPK1 (4.4116), followed by ctrl+MAPK1 (3.4472), MAPK1+ctrl (3.3823), and MAPK1+TGFBR2 (3.1298). Despite these large responses, Program 4 was positive for only 24 perturbations and had a negative mean response (-0.1331), indicating that its strong responses were concentrated in a subset of perturbations. Similarly, \textbf{Program 10} showed its strongest response for DUSP9+SNAI1 (2.8047), followed by ZBTB10+SNAI1 (2.2042) and FOXA3+FOXL2 (1.8375).
+
+Other programs displayed recurrent responses across several perturbation classes. Program 18 was positive for 51 perturbations, with its highest responses observed for SPI1+ctrl (1.7518), ctrl+HOXC13 (1.6760), and HOXC13+ctrl (1.5861). Program 16 was positive for 52 perturbations and reached its highest responses for TP73+ctrl (1.7040), FOXA3+FOXL2 (1.5630), and POU3F2+FOXL2 (1.3863). Program 20 was positive for 49 perturbations and was strongest for FOSB+CEBPB (2.0790), KLF1+CEBPA (1.8429), and FOSB+CEBPE (1.8379).
+
+A summary of the strongest perturbation responses for each program is provided in Table \ref{tab:program_relative_response_summary}. In addition to the three strongest responses, the table reports the mean and standard deviation of the response distribution and the number of perturbations with a positive response.
+
+\begin{table}[htbp]
+	\centering
+	\smaller[3]
+	\renewcommand{\arraystretch}{1.2}
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} cccc cc}
+			\hline
+			\textbf{Program} & \textbf{Top response 1} & \textbf{Top response 2} & \textbf{Top response 3} &
+			\textbf{Mean} & \textbf{SD} \\
+			\hline
+			1  & ctrl+ETS2 (0.7657) & CEBPB+ctrl (0.5168) & ETS2+CEBPE (0.4836) & -0.3453 & 0.4692 \\
+			2  & CEBPE+CEBPA (0.5327) & CEBPB+CEBPA (0.5023) & FOSB+CEBPB (0.3007) & -0.0840 & 0.2603 \\
+			3  & POU3F2+FOXL2 (0.3877) & POU3F2+CBFA2T3 (0.3601) & FOXF1+FOXL2 (0.3579) & -0.0218 & 0.1930 \\
+			4  & ETS2+MAPK1 (4.4116) & ctrl+MAPK1 (3.4472) & MAPK1+ctrl (3.3823) & -0.1331 & 1.1839 \\
+			5  & CEBPE+SPI1 (3.3028) & ctrl+CEBPE (3.1515) & JUN+CEBPA (3.1377) & 0.7873 & 1.2674 \\
+			6  & KLF1+MAP2K6 (0.8133) & CEBPE+KLF1 (0.6938) & ctrl+KLF1 (0.5691) & -0.3480 & 0.3649 \\
+			7  & UBASH3B+CNN1 (2.0836) & PTPN12+ZBTB25 (2.0787) & UBASH3B+ZBTB25 (1.9772) & 0.3836 & 1.0169 \\
+			8  & FOXA3+FOXL2 (0.7547) & FOXA1+FOXL2 (0.7146) & FOXA1+HOXB9 (0.6534) & -0.1903 & 0.4412 \\
+			9  & CBL+CNN1 (2.8713) & UBASH3B+CNN1 (2.8543) & CNN1+UBASH3A (2.4281) & 0.4826 & 0.9597 \\
+			10 & DUSP9+SNAI1 (2.8047) & ZBTB10+SNAI1 (2.2042) & FOXA3+FOXL2 (1.8375) & 0.1028 & 1.0250 \\
+			11 & KLF1+TGFBR2 (1.3622) & ctrl+KLF1 (1.2986) & KLF1+ctrl (1.2732) & -0.2596 & 0.7662 \\
+			12 & CDKN1B+CDKN1A (0.9335) & ctrl+SPI1 (0.9255) & UBASH3B+PTPN9 (0.8604) & 0.0818 & 0.4323 \\
+			13 & ctrl+ETS2 (0.0718) & ctrl+CDKN1A (0.0434) & ctrl (0.0000) & -0.8484 & 0.5095 \\
+			14 & HOXC13+ctrl (0.5149) & ctrl+CEBPA (0.4045) & FOSB+CEBPE (0.3799) & 0.0778 & 0.1551 \\
+			15 & JUN+CEBPA (0.7405) & CEBPB+CEBPA (0.5811) & ZC3HAV1+CEBPA (0.5447) & 0.1024 & 0.1787 \\
+			16 & TP73+ctrl (1.7040) & FOXA3+FOXL2 (1.5630) & POU3F2+FOXL2 (1.3863) & 0.2708 & 0.7792 \\
+			17 & ZC3HAV1+CEBPA (1.5472) & CEBPA+ctrl (1.3583) & CEBPB+CEBPA (1.2143) & -0.1744 & 0.4808 \\
+			18 & SPI1+ctrl (1.7518) & ctrl+HOXC13 (1.6760) & HOXC13+ctrl (1.5861) & 0.3061 & 0.5298 \\
+			19 & KLF1+MAP2K6 (0.2452) & CDKN1C+ctrl (0.1253) & KLF1+BAK1 (0.1220) & -0.2596 & 0.1986 \\
+			20 & FOSB+CEBPB (2.0790) & KLF1+CEBPA (1.8429) & FOSB+CEBPE (1.8379) & 0.2874 & 1.1542 \\
+			\hline
+		\end{tabular*}%
+	}
+	\caption{Summary of relative responses for the inferred transcriptional programs. For each program, the three perturbations with the highest relative-response scores are shown together with their scores. Mean response, standard deviation (SD), and the number of perturbations with a positive response are also reported.}
+	\label{tab:program_relative_response_summary}
+\end{table}
+
+The degree to which individual perturbations preferentially affected a single program was assessed by comparing the highest and second-highest relative-response scores. The ten perturbations with the largest differences are shown in Table \ref{tab:program_response_selectivity}. The largest separation was observed for \textbf{ETS2+MAPK1}, for which Program 4 reached 4.4116 compared with 1.9615 for Program 5, corresponding to a difference of 2.4501. This was followed by DUSP9+SNAI1, for which Program 10 (2.8047) exceeded Program 16 (0.7025) by 2.1022. Similarly, the two MAPK1 control orientations, ctrl+MAPK1 and MAPK1+ctrl, showed strong selectivity for Program 4, with differences of 2.0068 and 1.9762, respectively. CEBPE-associated perturbations also showed substantial selectivity for Program 5, particularly CEBPE+CEBPA (difference = 1.9001) and CEBPE+SPI1 (difference = 1.8399).
+
+\begin{table}[htbp]
+	\centering
+	\smaller[1]
+	\renewcommand{\arraystretch}{1.2}
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} lccccc}
+			\hline
+			\textbf{Perturbation} & \textbf{Top program} & \textbf{Top score} &
+			\textbf{Second program} & \textbf{Second score} & \textbf{Top--second} \\
+			\hline
+			ETS2+MAPK1   & Program 4  & 4.4116 & Program 5  & 1.9615 & 2.4501 \\
+			DUSP9+SNAI1  & Program 10 & 2.8047 & Program 16 & 0.7025 & 2.1022 \\
+			ctrl+MAPK1   & Program 4  & 3.4472 & Program 20 & 1.4404 & 2.0068 \\
+			MAPK1+ctrl   & Program 4  & 3.3823 & Program 20 & 1.4061 & 1.9762 \\
+			CEBPE+CEBPA  & Program 5  & 3.0262 & Program 20 & 1.1261 & 1.9001 \\
+			CEBPE+SPI1   & Program 5  & 3.3028 & Program 18 & 1.4630 & 1.8399 \\
+			MAPK1+TGFBR2 & Program 4  & 3.1298 & Program 20 & 1.3638 & 1.7660 \\
+			ctrl+CEBPE   & Program 5  & 3.1515 & Program 20 & 1.5536 & 1.5979 \\
+			ZBTB10+SNAI1 & Program 10 & 2.2042 & Program 20 & 0.6646 & 1.5395 \\
+			CEBPE+CEBPB  & Program 5  & 3.1081 & Program 20 & 1.5792 & 1.5289 \\
+			\hline
+		\end{tabular*}%
+	}
+	\caption{Most selective perturbation responses. Perturbations are ranked by the difference between their highest and second-highest program relative-response scores.}
+	\label{tab:program_response_selectivity}
+\end{table}
+
+As a quality-control measure, reciprocal perturbation representations were compared to assess the symmetry of the inferred responses. Perturbations represented as both \textit{gene+ctrl} and \textit{ctrl+gene} were expected to produce similar program-response profiles if the ordering of the two components did not substantially affect the inferred response. Correlations between reciprocal profiles were high for all eight tested pairs, ranging from $r=0.840$ for CDKN1A to $r=0.987$ for CEBPE. The highest correlations were observed for CEBPE ($r=0.987$), SPI1 ($r=0.985$), MAPK1 ($r=0.984$), KLF1 ($r=0.981$), and CEBPA ($r=0.980$). CDKN1A showed the lowest correlation among the reciprocal pairs ($r=0.840$), while CEBPB and HOXC13 also showed high concordance ($r=0.964$ and $r=0.968$, respectively). The corresponding RMSE values ranged from 0.125 for KLF1 to 0.304 for CDKN1A.
+
+These reciprocal comparisons were used primarily as a quality control check of response symmetry. The high correlations observed across the reciprocal representations indicate that the overall program-response profiles were generally preserved when the order of the perturbation and control labels was reversed. The complete reciprocal comparisons are reported in Table \ref{tab:reciprocal_response_qc}.
+
+\begin{table}[htbp]
+	\centering
+	\smaller[1]
+	\renewcommand{\arraystretch}{1.2}
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} lllccc}
+			\hline
+			\textbf{Pair 1} & \textbf{Pair 2} & \textbf{Correlation} &
+			\textbf{RMSE} & \textbf{Maximum absolute difference} \\
+			\hline
+			CEBPE+ctrl  & ctrl+CEBPE  & 0.9869 & 0.1454 & 0.4373 \\			
+			SPI1+ctrl   & ctrl+SPI1   & 0.9850 & 0.1966 & 0.4008 \\
+			MAPK1+ctrl  & ctrl+MAPK1  & 0.9839 & 0.1777 & 0.4714 \\
+			KLF1+ctrl   & ctrl+KLF1   & 0.9809 & 0.1252 & 0.3752 \\			
+			CEBPA+ctrl  & ctrl+CEBPA  & 0.9796 & 0.2740 & 0.6092 \\
+			HOXC13+ctrl & ctrl+HOXC13 & 0.9677 & 0.1785 & 0.4288 \\
+			CEBPB+ctrl  & ctrl+CEBPB  & 0.9642 & 0.2022 & 0.4082 \\
+			CDKN1A+ctrl & ctrl+CDKN1A & 0.8398 & 0.3044 & 0.6164 \\			
+			\hline
+		\end{tabular*}%
+	}
+	\caption{Reciprocal perturbation QC. Correlation, root mean squared error (RMSE), and maximum absolute difference between the complete program-response profiles of reciprocal perturbation representations.}
+	\label{tab:reciprocal_response_qc}
+\end{table}
+
+Taken together, the relative-response analysis identified both broadly responsive programs and perturbation-specific response patterns. Program 5 showed the broadest positive response, while Programs 4, 9, and 10 exhibited particularly strong responses to specific groups of perturbations. The selectivity analysis further distinguished perturbations with concentrated responses from those affecting multiple programs more evenly. Finally, the reciprocal analysis provided a QC assessment showing high concordance between alternative representations of the same single perturbation, supporting the consistency of the inferred relative-response profiles.
+
+
+\subsection{Programs correlation (relative responses)}
+
+%The relative-response profiles and program correlation structure were considered jointly to examine how perturbations were distributed across the inferred transcriptional programs. While the relative-response analysis identifies the programs most strongly affected by individual perturbations, the correlation analysis evaluates whether different programs tend to show coordinated or opposing responses across perturbations. Thus, correlations provide a complementary view of the response structure identified in the perturbation analysis.
+
+The relative-response profiles and their correlation structure were considered jointly to examine how perturbations were distributed across the inferred transcriptional programs. In contrast to the cell-level program correlations described above, this analysis was performed on the \textbf{relative-response profiles of the programs across perturbation conditions}. Here, each program is represented by one relative-response value for each perturbation, obtained from the inferred perturbation responses relative to the corresponding control. Pearson correlation therefore evaluates whether two programs show similar or opposing \textbf{relative-response patterns across perturbations}. Thus, while the cell-level correlation analysis asks whether two programs tend to be active in the same cells, the relative-response correlation asks whether the inferred responses of two programs tend to increase or decrease together across the same perturbation conditions. \\
+
+\begin{figure}[h]
+	\centering
+	\setlength{\abovecaptionskip}{2pt}
+	\[
+	\begin{array}{c}
+	\textbf{Relative-response correlation}\\[6pt]
+	\underset{\text{}}{
+		\begin{array}{|c|cccc|}
+		\hline
+		& \mathrm{Pert}_1 & \mathrm{Pert}_2 & \cdots & \mathrm{Pert}_M\\
+		\hline
+		P_1 & 2.5 & 0.3 & \cdots & -1.2\\
+		P_2 & 2.1 & 0.5 & \cdots & -0.8\\
+		\vdots & \vdots & \vdots & & \vdots\\
+		P_K & 0.4 & 1.8 & \cdots & 0.2\\
+		\hline
+		\end{array}}
+	\\[8pt]
+	\text{Each program is represented by its relative-response profile across perturbations}\\[4pt]
+	R_i=(R_{i,1},R_{i,2},\ldots,R_{i,M})\\[8pt]
+	\Downarrow\\[-2pt]
+	r_{ij}=\operatorname{cor}(R_i,R_j)\\[8pt]
+	\textbf{Interpretation:}\\
+	\text{similar or opposing relative responses to perturbations}
+	\end{array}
+	\]
+	\caption{Correlation of relative-response profiles. Pearson correlations are calculated between the relative-response profiles of inferred programs across perturbation conditions. Each program is represented by one inferred relative-response value for each perturbation. Positive correlations indicate that two programs tend to show similar response patterns across perturbations, whereas negative correlations indicate opposing response patterns.}
+	\label{fig:relative_response_correlation}
+\end{figure} \\
+
+Several of the strongest program correlations were consistent with recurrent patterns observed in the relative-response profiles. \textbf{Programs 7 and 9} showed a positive correlation of $r=0.63$ and were both frequently among the strongest responses to perturbations involving CBL, UBASH3B, PTPN12, and CNN1. For example, CBL+CNN1 showed strong responses in Programs 9 and 7 (2.8713 and 1.7399, respectively), while UBASH3B+CNN1 showed responses of 2.8543 and 2.0836. The positive correlation between these programs therefore reflects a recurrent tendency for them to respond together across the perturbation set.
+
+A similar relationship was observed among \textbf{Programs 1, 4, and 20}. Program 1 correlated positively with Program 4 ($r=0.66$) and Program 20 ($r=0.75$), while Programs 4 and 20 were also positively correlated ($r=0.62$). Program 4, however, showed a more selective response pattern, with its strongest responses concentrated in MAPK1- and ETS2-containing perturbations. ETS2+MAPK1 produced the highest Program 4 response in the dataset (4.4116), followed by ctrl+MAPK1 (3.4472), MAPK1+ctrl (3.3823), and MAPK1+TGFBR2 (3.1298). Program 20, in contrast, showed recurrent responses across several perturbations, particularly FOSB- and CEBP-associated combinations, including FOSB+CEBPB (2.0790), KLF1+CEBPA (1.8429), and FOSB+CEBPE (1.8379). The positive correlations between these programs indicate that their responses varied in a coordinated manner across perturbations, despite differences in the perturbations producing their strongest individual responses.
+
+\textbf{Program 5} showed a positive correlation with Program 20 ($r=0.63$) and with Program 2 ($r=0.60$). This relationship was particularly relevant to the CEBP-associated perturbations, for which Program 5 was repeatedly the dominant response. CEBPE+SPI1, ctrl+CEBPE, CEBPE+CEBPA, and CEBPE+CEBPB all showed strong Program 5 responses, while Program 20 was frequently the second-highest response in the same perturbation profiles. The positive correlation between Programs 5 and 20 is therefore consistent with the recurrent co-occurrence of these responses across CEBP-associated perturbations.
+
+The correlation structure also highlighted several pairs of programs with opposing response patterns. The strongest negative correlation in the matrix was observed between \textbf{Programs 7 and 20} ($r=-0.87$). Program 7 was frequently strongly represented among CBL-, UBASH3B-, PTPN12-, and CNN1-associated perturbations, whereas Program 20 was prominent in several CEBP-, FOSB-, and related perturbations. Program 7 also showed strong negative correlations with Program 1 ($r=-0.76$), Program 5 ($r=-0.70$), and Program 4 ($r=-0.68$), indicating that perturbations producing strong responses in Program 7 tended, across the dataset, to show lower relative responses in these programs.
+
+A similarly strong inverse relationship was observed between \textbf{Programs 9 and 20} ($r=-0.68$). This is notable because Program 9 was one of the most broadly responsive programs and was particularly strong in the CBL- and UBASH3B-associated perturbations, whereas Program 20 was more prominent in perturbations such as FOSB+CEBPB and KLF1+CEBPA. Program 9 also showed a negative correlation with Program 18 ($r=-0.50$), while Program 18 was most strongly associated with SPI1+ctrl and HOXC13-containing perturbations. These relationships suggest that distinct perturbation classes can produce contrasting program-response profiles rather than simply differing in the magnitude of a common response.
+
+Other correlations were consistent with more specific response patterns. Programs 8 and 10 were positively correlated ($r=0.58$), and both were represented among the strongest responses of several FOXA-associated perturbations. Program 10 additionally showed particularly strong responses to the two SNAI1-containing perturbations, reaching 2.8047 for DUSP9+SNAI1 and 2.2042 for ZBTB10+SNAI1. Programs 12 and 16 also showed a positive correlation ($r=0.58$), with Program 16 showing strong responses in TP73+ctrl, FOXA3+FOXL2, and POU3F2+FOXL2, while Program 12 reached its highest response for CDKN1B+CDKN1A (0.9335).
+
+The negative correlation between \textbf{Programs 6 and 16} ($r=-0.61$) provides another example of contrasting response behavior. Program 6 was most strongly represented by KLF1+MAP2K6 (0.8133) and related KLF1-associated perturbations, whereas Program 16 reached its highest response for TP73+ctrl (1.7040) and showed substantial responses among several FOXA- and POU3F2-associated perturbations. The opposing response patterns captured by the correlation analysis therefore complement the perturbation-specific profiles identified from the relative-response matrix.
+
+Overall, combining the two analyses revealed a structured organization of perturbation responses. Some programs, such as Programs 7 and 9 and Programs 5 and 20, frequently responded together across perturbations and consequently showed positive correlations. Other programs, particularly Programs 7 and 20, Programs 1 and 7, and Programs 9 and 20, showed strong opposing correlations, reflecting contrasting patterns of response across the perturbation set. The dendrogram summarizes the hierarchical similarity of program-response profiles across perturbations, using correlation-derived distances (Figure \ref{fig:dendogram}).
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=1\textwidth]{img/dendogram.pdf}
+	\caption{Program clustering based on relative responses to perturbations.}
+	\label{fig:dendogram}
+\end{figure}
+
+
+
+%To characterize the effects of the perturbations on the inferred transcriptional programs, relative responses were examined across the perturbation set. 
+%
+%The relative response of an inferred transcriptional program quantifies the change in its inferred activity associated with a perturbation relative to the control reference. Positive values indicate a higher program response in the perturbed sample relative to the corresponding control, whereas negative values indicate a lower response. The magnitude of the value reflects the strength of the relative response on the scale produced by the D-SPIN analysis. These scores therefore provide a program-level measure of perturbation-associated changes and should not be interpreted as absolute expression levels or as direct measurements of gene regulatory activity.
+%
+%For each perturbation, programs were ranked according to their relative-response score, providing a measure of which transcriptional programs showed the strongest positive or negative changes relative to the control reference. The complete perturbation--program response matrix is shown in Figure \ref{fig:relative_responses}.
+%
+%\begin{figure}[h]
+%	\centering
+%	\includegraphics[width=1\textwidth]{img/relative_responses.pdf}
+%	\caption{Relative responses of the inferred transcriptional programs to perturbations, with programs grouped according to enrichment analysis. Each column represents a perturbation and each row an inferred program. Positive values indicate increased relative program activity, whereas negative values indicate decreased relative activity.}
+%	\label{fig:relative_responses}
+%\end{figure}
+%
+%The distribution of responses across perturbations was heterogeneous, with several programs showing recurrent positive responses and others being activated only by specific perturbations. \textbf{Program 5} showed the highest mean relative response ($\mu = 0.79$) and was positive in 55 perturbations. Its strongest responses were observed for \textbf{CEBPE+SPI1} (3.30), \textbf{ctrl+CEBPE} (3.15), and \textbf{JUN+CEBPA} (3.14). Program 5 was also strongly associated with several additional CEBP-containing perturbations, including CEBPE+CEBPA (3.03), CEBPE+CEBPB (3.11), CEBPB+CEBPA (2.69), and CEBPB+ctrl (2.33). This recurrent pattern identifies Program 5 as one of the most broadly responsive programs in the perturbation dataset.
+%
+%\textbf{Program 9} showed the second-highest mean relative response ($\mu = 0.48$) and was positive in 43 perturbations. Its strongest responses were observed for \textbf{CBL+CNN1} (2.87), \textbf{UBASH3B+CNN1} (2.85), and \textbf{CNN1+UBASH3A} (2.43). Program 7 showed a related pattern, with positive responses in 49 perturbations and a maximum response of 2.08 for \textbf{UBASH3B+CNN1}. Other strong Program 7 responses were observed for PTPN12+ZBTB25 (2.08) and UBASH3B+ZBTB25 (1.98). Thus, perturbations involving CBL, UBASH3B, PTPN12, and CNN1 frequently produced high relative responses in Programs 7 and 9.
+%
+%A distinct response pattern was observed for perturbations involving \textbf{MAPK1} and \textbf{ETS2}. \textbf{Program 4} showed the largest individual relative-response value in the dataset, reaching 4.41 for \textbf{ETS2+MAPK1}. Strong Program 4 responses were also observed for ctrl+MAPK1 (3.45), MAPK1+ctrl (3.38), and MAPK1+TGFBR2 (3.13). Although Program 4 therefore showed the strongest individual responses, its mean response across perturbations was negative ($\mu = -0.13$), and it was positive in only 24 perturbations. This indicates that its high overall response was concentrated in a relatively restricted subset of perturbations rather than being broadly distributed across the dataset.
+%
+%Similarly, \textbf{Program 10} showed a relatively heterogeneous response distribution. Its maximum response was observed for \textbf{DUSP9+SNAI1} (2.80), followed by ZBTB10+SNAI1 (2.20) and FOXA3+FOXL2 (1.84). Program 10 was positive in 37 perturbations, with a mean response of 0.10. The selectivity analysis further emphasized the specificity of the SNAI1-associated responses: DUSP9+SNAI1 showed a Program 10 score of 2.80 compared with 0.70 for its second-ranked program, Program 16, while ZBTB10+SNAI1 showed a corresponding difference between Program 10 (2.20) and Program 20 (0.66).
+%
+%Several other programs showed recurrent but less selective responses. \textbf{Program 18} was positive in 51 perturbations and reached its highest value for \textbf{SPI1+ctrl} (1.75), followed by ctrl+HOXC13 (1.68) and HOXC13+ctrl (1.59). \textbf{Program 16} was positive in 52 perturbations, with its strongest responses observed for \textbf{TP73+ctrl} (1.70), FOXA3+FOXL2 (1.56), and POU3F2+FOXL2 (1.39). \textbf{Program 20} was positive in 49 perturbations and reached its highest response for \textbf{FOSB+CEBPB} (2.08), followed by KLF1+CEBPA (1.84) and FOSB+CEBPE (1.84). In contrast, Programs 13 and 19 showed relatively limited positive responses. Program 13 was positive in only two perturbations and had a mean relative response of $-0.85$, while Program 19 was positive in six perturbations and had a mean response of $-0.26$.
+%
+%The selectivity analysis showed that some perturbations produced strongly concentrated responses in a single program. The largest separation between the top-ranked and second-ranked programs was observed for \textbf{ETS2+MAPK1}, where Program 4 reached 4.41 compared with 1.96 for Program 5, giving a difference of 2.45. This was followed by \textbf{DUSP9+SNAI1}, with Program 10 at 2.80 versus Program 16 at 0.70, and by the MAPK1 control-orientation perturbations, ctrl+MAPK1 and MAPK1+ctrl, where Program 4 exceeded Program 20 by 2.01 and 1.98, respectively. CEBPE-associated perturbations also showed strong selectivity, with Program 5 exceeding Program 20 by 1.90 for CEBPE+CEBPA and by 1.84 for CEBPE+SPI1. These profiles indicate that, for a subset of perturbations, one inferred program accounted for a substantially larger relative response than the remaining programs.
+%
+%The reciprocal perturbation analysis provided an additional measure of the reproducibility of single-perturbation responses represented in the two possible orientations. All eight reciprocal pairs showed positive correlations, ranging from 0.84 for CDKN1A+ctrl versus ctrl+CDKN1A to 0.99 for SPI1+ctrl versus ctrl+SPI1. The highest correlations were observed for SPI1 ($r=0.985$), CEBPE ($r=0.987$), MAPK1 ($r=0.984$), KLF1 ($r=0.981$), and CEBPA ($r=0.980$). The corresponding RMSE values ranged from 0.13 for KLF1 to 0.30 for CDKN1A. Thus, although the exact response magnitudes were not identical between reciprocal representations, the overall program-response profiles were highly concordant for most perturbations.
+%
+%Overall, the relative-response analysis revealed distinct patterns of perturbation-associated program activity. Program 5 showed the broadest positive response across the perturbation set, particularly among CEBP-associated perturbations, whereas Programs 7 and 9 were repeatedly prominent among CBL-, PTPN12-, UBASH3B-, and CNN1-containing perturbations. Program 4 and Program 10 displayed particularly strong responses for specific perturbation combinations, with ETS2+MAPK1 and DUSP9+SNAI1 showing the strongest program selectivity. Other programs, including Programs 16, 18, and 20, exhibited recurrent positive responses across multiple perturbation classes. Conversely, Programs 13 and 19 were predominantly associated with negative or weak responses. The high concordance of reciprocal perturbation profiles further supports the consistency of the inferred program responses across alternative representations of single perturbations.
+%
+%These relative responses represent associations between perturbations and inferred program activity and should not be interpreted as evidence of direct regulatory interactions. In particular, a large relative-response value identifies a strong change in the corresponding inferred program but does not by itself establish which individual genes or regulatory mechanisms mediate that response.
+%
+%%\begin{table}[htbp]
+%%	\centering
+%%	\smaller[1]
+%%	\renewcommand{\arraystretch}{1.2}
+%%	\resizebox{\textwidth}{!}{%
+%%		\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} cccc ccc }
+%%			\hline
+%%			\textbf{Program} & \textbf{Top response 1} & \textbf{Top response 2} & \textbf{Top response 3} &
+%%			\textbf{Mean response} & \textbf{SD} & \textbf{N positive} \
+%%			\hline
+%%			1  & ctrl+ETS2 (0.7657) & CEBPB+ctrl (0.5168) & ETS2+CEBPE (0.4836) & -0.3453 & 0.4692 & 19 \
+%%			2  & CEBPE+CEBPA (0.5327) & CEBPB+CEBPA (0.5023) & FOSB+CEBPB (0.3007) & -0.0840 & 0.2603 & 31 \
+%%			3  & POU3F2+FOXL2 (0.3877) & POU3F2+CBFA2T3 (0.3601) & FOXF1+FOXL2 (0.3579) & -0.0218 & 0.1930 & 37 \
+%%			4  & ETS2+MAPK1 (4.4116) & ctrl+MAPK1 (3.4472) & MAPK1+ctrl (3.3823) & -0.1331 & 1.1839 & 24 \
+%%			5  & CEBPE+SPI1 (3.3028) & ctrl+CEBPE (3.1515) & JUN+CEBPA (3.1377) & 0.7873 & 1.2674 & 55 \
+%%			6  & KLF1+MAP2K6 (0.8133) & CEBPE+KLF1 (0.6938) & ctrl+KLF1 (0.5691) & -0.3480 & 0.3649 & 10 \
+%%			7  & UBASH3B+CNN1 (2.0836) & PTPN12+ZBTB25 (2.0787) & UBASH3B+ZBTB25 (1.9772) & 0.3836 & 1.0169 & 49 \
+%%			8  & FOXA3+FOXL2 (0.7547) & FOXA1+FOXL2 (0.7146) & FOXA1+HOXB9 (0.6534) & -0.1903 & 0.4412 & 29 \
+%%			9  & CBL+CNN1 (2.8713) & UBASH3B+CNN1 (2.8543) & CNN1+UBASH3A (2.4281) & 0.4826 & 0.9597 & 43 \
+%%			10 & DUSP9+SNAI1 (2.8047) & ZBTB10+SNAI1 (2.2042) & FOXA3+FOXL2 (1.8375) & 0.1028 & 1.0250 & 37 \
+%%			11 & KLF1+TGFBR2 (1.3622) & ctrl+KLF1 (1.2986) & KLF1+ctrl (1.2732) & -0.2596 & 0.7662 & 23 \
+%%			12 & CDKN1B+CDKN1A (0.9335) & ctrl+SPI1 (0.9255) & UBASH3B+PTPN9 (0.8604) & 0.0818 & 0.4323 & 47 \
+%%			13 & ctrl+ETS2 (0.0718) & ctrl+CDKN1A (0.0434) & ctrl (0.0000) & -0.8484 & 0.5095 & 2 \
+%%			14 & HOXC13+ctrl (0.5149) & ctrl+CEBPA (0.4045) & FOSB+CEBPE (0.3799) & 0.0778 & 0.1551 & 53 \
+%%			15 & JUN+CEBPA (0.7405) & CEBPB+CEBPA (0.5811) & ZC3HAV1+CEBPA (0.5447) & 0.1024 & 0.1787 & 55 \
+%%			16 & TP73+ctrl (1.7040) & FOXA3+FOXL2 (1.5630) & POU3F2+FOXL2 (1.3863) & 0.2708 & 0.7792 & 52 \
+%%			17 & ZC3HAV1+CEBPA (1.5472) & CEBPA+ctrl (1.3583) & CEBPB+CEBPA (1.2143) & -0.1744 & 0.4808 & 12 \
+%%			18 & SPI1+ctrl (1.7518) & ctrl+HOXC13 (1.6760) & HOXC13+ctrl (1.5861) & 0.3061 & 0.5298 & 51 \
+%%			19 & KLF1+MAP2K6 (0.2452) & CDKN1C+ctrl (0.1253) & KLF1+BAK1 (0.1220) & -0.2596 & 0.1986 & 6 \
+%%			20 & FOSB+CEBPB (2.0790) & KLF1+CEBPA (1.8429) & FOSB+CEBPE (1.8379) & 0.2874 & 1.1542 & 49 \
+%%			\hline
+%%		\end{tabular*}%
+%%	}
+%%	\caption{Summary of relative responses for the inferred transcriptional programs. For each program, the three perturbations with the highest relative-response scores are shown together with their scores. Mean response, standard deviation (SD), and the number of perturbations with a positive response are also reported.}
+%%	\label{tab:program_relative_response_summary}
+%%\end{table}
+
+\newpage 
+
 \subsection{Directional network}
 
+To further investigate the organization of the inferred transcriptional programs, a directed network was constructed from the program-level interaction matrix estimated by D-SPIN. Whereas the preceding correlation analyses describe statistical relationships between program activity or relative-response profiles, the D-SPIN network represents the inferred interactions between program states within the probabilistic model. The network therefore provides a complementary representation of how the inferred programs may be organized through positive and negative interactions under the different perturbation conditions. In the D-SPIN formulation, positive interaction weights favor programs adopting the same state, whereas negative interaction weights favor different states. Consequently, positive and negative edges should be interpreted as inferred program-level interaction signs rather than as direct evidence of transcription-factor binding or biochemical regulation \cite{Jiang2023}.
 
-%Following the initial inspection and preparation of the dataset, the resulting model was evaluated to verify its structure and the dimensions of the inferred components. The model identified 20 transcriptional programs, represented by a $20 \times 20$ network matrix, while the program responses and relative responses were represented across 78 experimental conditions, resulting in matrices of dimensions $20 \times 78$. The underlying non-negative matrix factorization (oNMF) model likewise comprised 20 components, with each component defined across 1,333 genes. The corresponding sample list contained the 78 perturbation conditions considered in the analysis. The model-object and oNMF validation checks confirmed that the expected model components were present and that their dimensions were consistent with the inferred number of transcriptional programs, genes, and experimental conditions. These results established the structural basis for the subsequent characterization and biological interpretation of the inferred programs.
+The network was visualized using the directed-network representation provided by D-SPIN. Interactions with an absolute strength below $0.05$ were removed during network construction, while a directional asymmetry threshold of $0.05$ was used to distinguish preferentially directed interactions from approximately symmetric interactions. For visualization, only interactions with an absolute weight of at least $0.25$ were displayed. Modules were identified by Leiden clustering with a resolution parameter of $1.0$. The resulting network contained four modules, with sizes of 7, 6, 4, and 3 programs, respectively. The resulting partition was stable with respect to the random seed used for the Leiden procedure, as identical module assignments were obtained across all tested seeds.
+
+The inferred modular organization was also relatively robust to the choice of directional threshold. Increasing the directional threshold from $0.05$ to $0.10$ and $0.20$ changed the classification of several individual edges from directed to approximately reciprocal, but did not alter the membership of the four modules. This indicates that the higher-level modular organization was not dependent on the precise value used to define directional asymmetry. The resolution parameter affected the finer partitioning of the network. Resolutions of $0.5$ and $0.75$ also produced four modules, whereas resolutions of $1.25$ and above produced five modules. Thus, the four-module organization observed at the selected resolution represents a stable coarse-grained structure of the inferred network, while some individual program assignments depend on the clustering resolution.
+
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.7\textwidth]{img/network.pdf}
+	\caption{Program network constructed by DSPIN. }
+	\label{fig:network}
+\end{figure}
+
+
+The network showed a pronounced organization of strong positive interactions within modules. Several of the strongest positive edges connected programs belonging to the same inferred module. In particular, strong positive interactions were observed from Program 8 to Program 6, from Program 13 to Program 1, from Program 20 to Program 5, from Program 4 to Program 20, from Program 3 to Program 15, from Program 14 to Program 3, and from Program 16 to Program 7. These interactions link programs within the corresponding modules rather than connecting different modules. Additional positive edges with substantial weight included the interactions from Program 9 to Program 7, Program 13 to Program 6, Program 19 to Program 13, Program 6 to Program 13, Program 10 to Program 20, Program 18 to Program 20, Program 18 to Program 5, and Program 17 to Program 5. Together, these connections indicate that the modules are characterized by dense positive reinforcement or coordination among their member programs.
+
+The first module comprised Programs 13, 1, 6, 19, 8, 12, and 11. Several of the strongest interactions in the complete network were located within this group. In particular, Program 13 showed strong positive connections to Programs 1 and 6, while reciprocal positive relationships were present between Programs 19 and 13 and between Programs 6 and 13. Program 8 was also strongly connected to Program 6. Additional weaker positive interactions connected Program 19 to Programs 11 and 6, Program 8 to Programs 19 and 12, and Program 12 to Program 1. The overall pattern therefore suggests a highly interconnected positive subnetwork, in which several programs exhibit mutually reinforcing or coordinated interaction weights. The presence of multiple positive edges within the same module is consistent with the module being a coherent component of the inferred network.
+
+The second module consisted of Programs 5, 20, 17, 10, 4, and 18. This module contained several strong positive interactions centered on Programs 5 and 20. Program 4 was positively connected to Program 20, while Program 18 showed positive connections to both Programs 20 and 5. Program 17 was also positively connected to Program 5. Program 10 showed a positive interaction with Program 20, and Program 17 was positively connected to Program 20. The resulting structure indicates that these programs form a closely connected positive subnetwork. In addition, a weaker positive interaction linked Program 17 to Program 18, providing further internal connectivity. The presence of several strong positive interactions within this module suggests that the programs grouped together by Leiden clustering are connected by relatively strong inferred network interactions.
+
+The third module comprised Programs 3, 15, 2, and 14. This module was characterized by a particularly strong positive interaction chain involving Programs 14, 3, and 15. Program 14 showed a strong positive interaction with Program 3, while Program 3 showed a strong positive interaction with Program 15. Program 14 was also positively connected to Program 2. A further positive interaction was observed between Programs 15 and 3 in the opposite direction, producing a reciprocal relationship between these two programs. Together, these interactions define a compact positive subnetwork in which Programs 14, 3, and 15 occupy central positions. The strong internal connectivity of this small module distinguishes it from the larger modules and suggests that these programs form a tightly coordinated component of the inferred network.
+
+The fourth module consisted of Programs 7, 16, and 9. This module was dominated by strong positive interactions involving Program 7. Program 16 showed a strong positive interaction with Program 7, and Program 9 was also positively connected to Program 7. A reciprocal interaction between Programs 7 and 16 was retained, indicating that the inferred relationship between these two programs was comparatively symmetric at the selected directional threshold. Additional weaker positive interactions connected Program 16 to Program 9 and Program 11 to Program 7. The compact organization of this module suggests a small program group centered around Program 7.
+
+In contrast to the predominantly positive interactions within modules, many of the strongest negative interactions connected programs belonging to different modules. This pattern was particularly apparent for the negative edges shown in red in the network diagram. Strong negative interactions included Program 2 to Program 15, Program 7 to Program 5, Program 10 to Program 13, Program 10 to Program 5, Program 1 to Program 5, Program 1 to Program 7, Program 20 to Program 13, and Program 20 to Program 1. These interactions frequently linked programs belonging to distinct modules. For example, Program 10 is part of the second module, whereas Program 13 belongs to the first module, producing a negative interaction between these two modules. Similarly, the negative interaction from Program 7 to Program 5 links the fourth and second modules, while Program 1 to Program 7 connects the first and fourth modules.
+
+The negative interactions therefore provide a complementary organization to the positive intra-module structure. Rather than simply representing isolated negative associations, many of the strongest negative edges form connections between otherwise positively organized modules. This pattern is consistent with a network architecture in which programs within a module tend to support coordinated states, whereas interactions between some modules favor contrasting program states. In the D-SPIN model, a negative interaction does not necessarily imply that one program directly represses another; rather, it indicates that the inferred network assigns a negative coupling between the two program states, such that simultaneous activation or simultaneous inhibition is less favored than differing states \cite{Jiang2023}.
+
+Several additional negative interactions further illustrate this modular separation. Program 20 showed negative interactions with Programs 13 and 1, connecting the second module to the first. Program 20 also showed a negative interaction with Program 19, again linking the second and first modules. Program 18 exhibited both a strong positive interaction with Program 20 and a weaker negative interaction with the same program. This coexistence of positive and negative contributions emphasizes that the sign and direction of the interaction should be considered together with its magnitude rather than interpreted solely from the existence of an edge. Similarly, Programs 14 and 8 were connected by a weaker negative interaction despite being members of different modules, whereas Program 3 showed a weak negative interaction with Program 12, providing another example of cross-module opposition.
+
+The network also contained a number of weaker positive edges that were retained in the inferred network but fell below the threshold used for the main network visualization. These included, among others, interactions from Program 17 to Program 18, Program 19 to Programs 11 and 6, Program 8 to Programs 19 and 12, Program 11 to Program 7, Program 12 to Program 1, Program 15 to Programs 14 and 3, Program 19 to Program 1, Program 3 to Program 2, Program 2 to Program 13, Program 6 to Program 19, and Program 1 to Program 17. Although these interactions were not emphasized in the main network figure because of the visualization threshold, their presence contributes to the overall connectivity of the inferred network and provides additional links both within and between modules.
+
+An additional feature of the network is that some program pairs exhibited interactions in both directions. For example, positive reciprocal relationships were apparent between Programs 3 and 15, Programs 7 and 16, Programs 6 and 13, and Programs 13 and 19 under the displayed network structure. The occurrence of reciprocal interactions indicates that the inferred relationship between two programs cannot always be reduced to a single preferred direction. Conversely, several interactions were represented by a single directed edge because the inferred coupling was sufficiently asymmetric to satisfy the directional criterion. The distinction between directed and approximately symmetric interactions is therefore part of the network structure rather than simply a property of the visualization.
+
+The sensitivity analysis further showed that the exact set of directional edges depends more strongly on the directional threshold than the module assignment does. At a directional threshold of $0.05$, most retained program pairs were classified as directional, whereas increasing the threshold to $0.10$, $0.20$, $0.30$, and $0.50$ progressively increased the number of interactions treated as approximately symmetric. Nevertheless, the module assignments remained unchanged between directional thresholds of $0.05$ and $0.20$. This indicates that some individual arrows should be interpreted with greater caution than the broader modular structure. In particular, the direction of relatively moderate interactions may depend on the asymmetry criterion, whereas the strongest network relationships and the overall grouping of programs are less sensitive to this parameter.
+
+The interaction network therefore revealed two complementary levels of organization. At the local level, each module contained several positive interactions connecting its constituent programs, with some modules displaying particularly strong reciprocal or directed relationships. At the global level, negative interactions frequently connected programs belonging to different modules, suggesting antagonistic or contrasting organization between subsets of programs. The resulting structure is consistent with a network in which perturbation responses are not distributed independently across programs, but instead propagate through a limited number of coordinated program groups that interact positively within modules and oppose selected programs in other modules.
+
+Importantly, the directionality of the inferred network should not be interpreted as direct evidence of causality between the corresponding transcriptional programs. D-SPIN infers a probabilistic interaction model that describes how program states are statistically coupled across the perturbation dataset. The directed representation captures asymmetry in the inferred interaction weights, but does not by itself establish a direct biochemical or transcriptional regulatory mechanism. Consequently, edges such as Program 8 $\rightarrow$ Program 6 or Program 13 $\rightarrow$ Program 1 are best interpreted as inferred directional dependencies within the D-SPIN network rather than as experimentally validated regulatory events.
+
+Overall, the directional network provides a higher-level representation of the organization identified in the preceding perturbation-response analyses. The network separates the 20 programs into four principal modules and reveals strong positive interactions within these groups, together with negative interactions that frequently connect programs from different modules. The strongest positive connections are concentrated within modules, while several of the strongest negative interactions bridge modules, producing a structured pattern of coordination and opposition. The stability of the module assignments across directional thresholds and Leiden seeds further supports the presence of a reproducible modular organization, while the sensitivity of individual edge directions to the directional threshold indicates that specific directional relationships should be interpreted more cautiously. Together, these results suggest that the perturbation responses identified in the relative-response analysis are organized within a structured program network consisting of coordinated modules and contrasting inter-module interactions.
 
 
 \newpage
 
-\section{Norman from D-SPIN, and a little more}
+\section{A final reachout}
+
+%\subsection{Comparison with the original Norman et al. perturbational landscape}
+
+\subsection{Comparison with the Norman et al. perturbational landscape}
+
+The dataset analysed in this study originates from the CRISPRa Perturb-seq experiment reported by Norman et al.~\citep{Norman2019}. The original study used transcriptional phenotypes to characterize genetic interactions in K562 cells and identified several biologically interpretable perturbational groups. These groups include G1 cell cycle, Erythroid, Pioneer factors, Granulocyte apoptosis, Pro-growth, and Megakaryocyte programmes, which are also provided as perturbation annotations in the current \textcolor{red}{PertPy} representation of the Norman dataset \citep{Heumos2026}. These annotations provide an independent reference against which the D-SPIN relative-response profiles can be interpreted.
+
+The comparison does not represent a direct replication of the Norman et al.~analysis. The two approaches organize the same transcriptional dataset differently. Norman et al.~primarily organized perturbations according to their genome-wide transcriptional phenotypes, whereas D-SPIN decomposes the transcriptional measurements into latent programs and then estimates a relative response for each program and perturbation. Consequently, one biological perturbational programme may be represented by several D-SPIN programs, and individual D-SPIN programs need not correspond one-to-one to a single Norman category. The comparison therefore focuses on whether the major biological response classes identified in the original study are also reflected in the D-SPIN program composition and relative-response profiles.
+
+\subsubsection{Quantitative comparison of D-SPIN programs with Norman perturbation groups}
+
+To compare the two representations, the relative-response values were grouped according to the perturbational programmes defined for the Norman dataset. For each D-SPIN program and Norman category, the mean relative response was calculated across the perturbations assigned to that category. When a single-gene perturbation was represented in the D-SPIN dataset as either a gene+ctrl or ctrl+gene condition, only one orientation was used for the category-level summary to avoid counting the same biological perturbation twice.
+
+The strongest correspondences are summarized in Table~\ref{tab:dspin_norman_comparison}. Several D-SPIN programs showed markedly positive mean responses within biologically coherent Norman categories, indicating that the perturbational structure described in the original study is recovered in the D-SPIN response space.
+
+\begin{table}[htbp]
+	\centering
+	\renewcommand{\arraystretch}{1.2}
+	\setlength{\tabcolsep}{6pt}
+	\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} l l c c c}
+		\hline
+		\textbf{Program} & \textbf{Norman programme} & \textbf{Mean response} & \textbf{Minimum} & \textbf{Maximum} \\
+		\hline
+		Program 7  & Erythroid               & 1.631 & 0.963 & 2.084 \\
+		Program 9  & Erythroid               & 1.605 & 0.660 & 2.871 \\
+		Program 5  & Granulocyte apoptosis   & 2.818 & 2.100 & 3.303 \\
+		Program 20 & Granulocyte apoptosis   & 1.477 & 0.337 & 2.079 \\
+		Program 4  & Megakaryocyte            & 3.243 & 2.390 & 4.412 \\
+		Program 10 & Pioneer factors          & 1.442 & 0.687 & 2.805 \\
+		\hline
+	\end{tabular*}
+	\caption{Mean D-SPIN relative responses for selected programs across perturbations belonging to the corresponding Norman et al.~programmes. Minimum and maximum values indicate the range of relative responses within each category. The number of perturbations contributing to each summary was 17 for Erythroid, 15 for Granulocyte apoptosis, 5 for Megakaryocyte, and 18 for Pioneer factors.}
+	\label{tab:dspin_norman_comparison}
+\end{table}
+
+\subsubsection{Erythroid response}
+
+The strongest correspondence with the erythroid perturbational programme was observed for \textbf{Programs 7 and 9}. Program 7 was characterized by GYPA, GYPB, and HBG2 among its three highest-weight genes and showed enrichment for oxygen, carbon dioxide, and gas-transport processes. Program 9 was similarly characterized by HBA1, HBA2, and HEMGN. Thus, the gene composition of both programs provided independent evidence for erythroid-related transcriptional states.
+
+The relative-response profiles provided a second and independent line of evidence. Across the 17 perturbations assigned to the Norman erythroid programme, Program 7 had a mean relative response of $1.631$, with responses ranging from $0.963$ to $2.084$. Program 9 showed a mean response of $1.605$, ranging from $0.660$ to $2.871$. Both programs therefore exhibited consistently positive responses across the erythroid-associated perturbation set rather than being driven by a single perturbation.
+
+The strongest individual response was observed for CBL+CNN1, for which Program 9 reached $2.8713$ and Program 7 reached $1.7399$. Program 7 also reached $1.8762$ for CBL+UBASH3B, while Program 9 reached $1.6552$ for the same perturbation. For UBASH3B+CNN1, the corresponding responses were $2.0836$ for Program 7 and $2.8543$ for Program 9. These repeated responses indicate that the two programs are consistently associated with the same perturbational region of the dataset.
+
+This agreement is particularly relevant because Norman et al.~identified CBL+CNN1 as a strong genetic interaction associated with an erythroid phenotype \citep{Norman2019}. The D-SPIN results therefore reproduce this biological association at the level of latent program activity: perturbations previously characterized as erythroid-associated generate strong responses in programs whose gene composition is independently consistent with erythroid differentiation.
+
+The coordinated behavior of Programs 7 and 9 is further supported by their relative-response correlation of $r=0.63$. Thus, the erythroid phenotype is not represented by a single isolated D-SPIN program, but by at least two programs whose responses tend to vary together across perturbations. This is consistent with the decomposition of a broad cellular phenotype into multiple transcriptional components.
+
+Program 16 provides a further possible erythroid-related component. ALAS2 was its highest-weight gene, and the program showed positive relative responses to several perturbations associated with erythroid differentiation. Its correspondence with the Norman erythroid programme was, however, less specific than those of Programs 7 and 9 and is therefore interpreted more cautiously.
+
+\subsubsection{Granulocyte-associated response}
+
+A second strong correspondence was observed for \textbf{Program 5}. Its highest-weight genes were LST1, TYROBP, and CSF3R, and its functional enrichment was associated with hematopoietic and immune-related processes. These features are consistent with a myeloid/granulocytic transcriptional state.
+
+The perturbation-level evidence was particularly strong. Across the 15 perturbations assigned to the Norman Granulocyte apoptosis programme, Program 5 had a mean relative response of $2.818$, with all values lying between $2.100$ and $3.303$. This was substantially higher than the mean response observed for most other programs in the same perturbation set. Strong responses were observed for CEBPE+SPI1 ($3.3028$), CEBPE+ctrl ($3.0866$), CEBPE+CEBPB ($3.1081$), CEBPE+CEBPA ($3.0262$), CEBPE+RUNX1T1 ($2.5841$), CEBPA+ctrl ($2.9151$), KLF1+CEBPA ($2.8837$), and JUN+CEBPA ($3.1377$).
+
+This pattern closely follows the perturbation composition of the Norman Granulocyte apoptosis programme, which includes SPI1, CEBPA, CEBPB, CEBPE, and several combinations involving these factors \citep{Norman2019,Heumos2026}. The agreement between the program gene signature and its perturbational response therefore provides convergent evidence for a granulocyte-associated interpretation of Program 5.
+
+Program 20 also showed a positive response across this perturbational group, with a mean relative response of $1.477$. Its responses ranged from $0.337$ to $2.079$, and particularly strong responses were observed for FOSB+CEBPB ($2.0790$), FOSB+CEBPE ($1.8379$), KLF1+CEBPA ($1.8429$), and JUN+CEBPA ($1.7507$). The positive correlation between Programs 5 and 20 ($r=0.63$) is therefore consistent with their recurrent co-occurrence in CEBP- and related perturbations.
+
+The relationship between the erythroid and granulocyte-associated programs is particularly apparent from the negative relative-response correlation between Programs 7 and 20 ($r=-0.87$). Programs 7 and 20 therefore represent contrasting perturbational response patterns: the former is strongly activated by the erythroid-associated CBL/UBASH3B/PTPN12-related perturbations, whereas the latter is more prominent among CEBP- and FOSB-associated perturbations. The strong negative correlation provides a quantitative indication that these biological response classes occupy opposing regions of the D-SPIN relative-response space.
+
+\subsubsection{Megakaryocyte-associated response}
+
+\textbf{Program 4} provided a particularly informative comparison because its gene-level annotation was inconclusive. No significant Gene Ontology Biological Process terms were detected for this program, and its top genes did not provide an unambiguous functional interpretation. In contrast, its perturbation-response profile showed a strong and highly selective association with the Norman Megakaryocyte programme.
+
+Across the five perturbations assigned to this category, Program 4 had a mean relative response of $3.243$, with values ranging from $2.390$ to $4.412$. The strongest response occurred for ETS2+MAPK1 ($4.4116$), followed by MAPK1+ctrl ($3.3823$), MAPK1+TGFBR2 ($3.1298$), CEBPB+MAPK1 ($2.9024$), and ctrl+ETS2 ($2.3901$). The concentration of the strongest responses in MAPK1- and ETS2-containing perturbations is highly consistent with the Megakaryocyte programme defined for the Norman dataset, which includes MAPK1, ETS2, ETS2+MAPK1, MAPK1+TGFBR2, and CEBPB+MAPK1 \citep{Norman2019,Heumos2026}.
+
+This example demonstrates that perturbation-response analysis can provide biological information that is not apparent from gene-set enrichment alone. Program 4 could not be assigned confidently on the basis of its GO enrichment, whereas its response to a predefined perturbational category provides a much clearer biological interpretation.
+
+\subsubsection{Pioneer-factor response}
+
+The same approach identified a broader response pattern associated with the \textbf{Pioneer factors} category. Program 10 showed particularly strong responses to the perturbations belonging to this group. Across the 18 annotated pioneer-factor perturbations represented in the present matrix, Program 10 had a mean relative response of approximately $1.442$, with values ranging from $0.687$ to $2.805$.
+
+The strongest response was observed for DUSP9+SNAI1 ($2.8047$), followed by ZBTB10+SNAI1 ($2.2042$). Program 10 also showed strong responses across multiple FOXA-associated perturbations, including FOXA1+FOXF1 ($1.6619$), FOXA1+FOXL2 ($1.5196$), FOXA1+HOXB9 ($1.4815$), FOXA3+FOXA1 ($1.8027$), FOXA3+FOXL2 ($1.8375$), FOXA3+HOXB9 ($1.7578$), FOXF1+FOXL2 ($1.4901), and FOXF1+HOXB9 ($1.0674). This broad response profile suggests that Program 10 captures a transcriptional component associated with the pioneer-factor perturbations rather than being restricted to a single perturbation combination.
+
+The perturbation-response analysis therefore extends the biological interpretation of Program 10 beyond its individual top genes. The recurrence of positive responses across different FOXA-, SNAI1-, HOXC13-, and related perturbations is consistent with a shared transcriptional response axis corresponding to the pioneer-factor programme defined in the original dataset.
+
+\subsubsection{Cell-cycle response}
+
+The Norman G1-cell-cycle category provides a somewhat different type of correspondence. The six annotated perturbations in this group comprise CDKN1A, CDKN1B, CDKN1C, and their pairwise combinations with each other. D-SPIN recovered several programs with positive responses to these perturbations, but no single program was uniquely associated with the entire G1 category.
+
+For example, Program 11 had a mean relative response of approximately $0.860$ across the six G1 perturbations, while Program 16 showed a similar mean response of approximately $0.857$. Programs 7 and 9 also showed positive mean responses of approximately $1.144$ and $0.895$, respectively. The distribution across multiple programs suggests that the G1 perturbational state is represented by several transcriptional components rather than a single latent factor.
+
+This observation is consistent with the biological composition of the D-SPIN programs. Program 2 was enriched for DNA replication, DNA repair, and DNA damage-response processes and contained HIST1H4C, KIAA0101, and TYMS. Program 3 contained CKS2, CENPF, and BIRC5 and was enriched for cell-cycle and mitotic chromosome-segregation processes. Programs 14 and 15 were similarly characterized by CDK1/PIF1/GTSE1 and PLK1/CDC20/CCNB1, respectively. These programs therefore capture different molecular components of proliferative and mitotic activity, even if their responses do not map one-to-one onto the Norman G1 perturbational category.
+
+\subsubsection{Program-level representation of the Norman perturbational landscape}
+
+The comparison suggests that the D-SPIN relative-response matrix preserves major biological distinctions originally identified by Norman et al.~while representing them at a different level of organization. The original study grouped perturbations according to their transcriptional phenotypes, whereas D-SPIN groups programs according to how their inferred activity responds across perturbations. The correspondence between the two representations is therefore expected to emerge as similar patterns of association rather than as identical clusters.
+
+This relationship is particularly clear for the erythroid and granulocyte-associated perturbations. The CBL-, UBASH3B-, PTPN12-, PTPN9-, and CNN1-containing perturbations assigned to the Norman erythroid programme produced strong responses in Programs 7 and 9. Conversely, CEBPA-, CEBPB-, CEBPE-, SPI1-, FOSB-, and JUN-containing perturbations assigned to the Norman Granulocyte apoptosis programme produced strong responses in Program 5 and, to a lesser extent, Program 20. The separation between these two response classes is further reflected in the strong negative correlation between Programs 7 and 20.
+
+The megakaryocyte category provides a second clear example. The five perturbations defined in the Norman Megakaryocyte programme produced an average relative response of $3.243$ in Program 4, considerably larger than the responses observed for most other perturbational categories. Thus, the MAPK1/ETS2 perturbational axis is recovered as a distinct D-SPIN response programme even though Program 4 could not be annotated confidently using GO enrichment alone.
+
+The pioneer-factor category likewise demonstrates that D-SPIN captures a broader perturbational axis rather than merely isolated pairwise effects. Program 10 responded positively across a large number of FOXA-, HOX-, SNAI1-, TP73-, and related perturbations. This pattern indicates that the response is associated with a common perturbational programme spanning multiple transcriptional regulators.
+
+Taken together, these results indicate that the D-SPIN programs recover several major biological axes already present in the original Norman dataset. The strongest correspondences are summarized by the following associations:
+
+$$
+\begin{aligned}
+\text{Programs 7 and 9}
+&\longleftrightarrow
+\text{Erythroid perturbations},\\
+\text{Programs 5 and 20}
+&\longleftrightarrow
+\text{Granulocyte-associated perturbations},\\
+\text{Program 4}
+&\longleftrightarrow
+\text{Megakaryocyte perturbations},\\
+\text{Program 10}
+&\longleftrightarrow
+\text{Pioneer-factor perturbations}.
+\end{aligned}
+$$
+
+These correspondences are supported by multiple levels of evidence, including the genes defining the programs, Gene Ontology enrichment, the magnitude and recurrence of relative responses across perturbations, and the independent perturbational annotations established for the original dataset.
+
+The comparison should nevertheless be interpreted as a concordance analysis rather than as a direct replication of the Norman et al.~results. The number, boundaries, and biological composition of D-SPIN programs are not expected to coincide exactly with the perturbational groups defined in the original study. Instead, the results indicate that the major biological response axes identified previously are retained within the D-SPIN representation and can be resolved into multiple coordinated transcriptional programs.
+
+Overall, the D-SPIN analysis provides a complementary program-level description of the Norman CRISPRa Perturb-seq landscape. The agreement between the inferred program identities and the perturbational categories reported in the original study provides independent support for the biological interpretation of the D-SPIN programs. At the same time, the relative-response representation adds information about how individual programs vary across perturbations, revealing coordinated responses such as the positive association between Programs 7 and 9 and the strong opposing relationship between Programs 7 and 20. Thus, rather than reproducing the original perturbation manifold, the D-SPIN analysis provides a latent transcriptional-program representation of the same biological response landscape.
+
+\subsubsection{Directional network and perturbational differentiation states}
+
+The directional network provided an additional layer of information when interpreted in the context of the perturbational programmes described by Norman et al.~\citep{Norman2019}. Whereas the relative-response analysis identified which transcriptional programs were preferentially activated or inhibited by individual perturbations, the network describes how the inferred program states are coupled to one another. The combination of these two analyses therefore allows the major perturbational phenotypes to be considered not only as distinct response patterns, but also in terms of the interactions between the transcriptional programs underlying those patterns.
+
+The four modules identified by the D-SPIN network showed substantial functional structure. The fourth module, containing Programs 7, 16, and 9, included the programs most strongly associated with erythroid-related transcriptional responses. In particular, Programs 7 and 9 were characterized by erythroid-associated genes and showed strong responses to the CBL-, UBASH3B-, PTPN12-, PTPN9-, and CNN1-containing perturbations that define the erythroid region of the Norman perturbational landscape. The second module contained Programs 5, 20, 17, 10, 4, and 18 and combined several response types, including the granulocyte-associated Program 5, the related Program 20, the MAPK1/ETS2-associated Program 4, and Program 10, which responded strongly to pioneer-factor perturbations. The third module, comprising Programs 3, 15, 2, and 14, was dominated by cell-cycle and mitotic programs.
+
+An important feature of the network was that many of the strongest positive interactions occurred within modules, whereas several of the strongest negative interactions connected programs belonging to different modules. For example, the interaction from Program 7 to Program 5 was strongly negative, while Program 9 showed a negative interaction with Program 20. Programs 7 and 9 are strongly associated with the erythroid response, whereas Programs 5 and 20 were preferentially responsive to CEBP- and related perturbations associated with the granulocyte programme. The directional network therefore provides a structural counterpart to the strong negative relative-response correlation observed between Programs 7 and 20 ($r=-0.87$).
+
+This correspondence suggests that the separation between erythroid- and granulocyte-associated response states is represented at two levels in the D-SPIN analysis. At the response level, the programs show opposing patterns across perturbations, as reflected by their negative relative-response correlation. At the network level, selected programs from these response states are connected by negative interactions. The interaction from Program 7 to Program 5 is particularly notable because it connects two programs with strong and biologically distinct perturbation responses. Likewise, the negative interaction from Program 9 to Program 20 provides a second connection between the erythroid-associated and granulocyte-associated response axes.
+
+The network also contained negative interactions linking the erythroid-associated module to other transcriptional states. For example, Program 1 showed negative interactions with Programs 5 and 7, while Program 20 showed negative interactions with Programs 1 and 13. Several negative interactions also connected the cell-cycle-associated module to programs in other modules, including the interaction from Program 3 to Program 12 and the interaction from Program 14 to Program 8. These edges indicate that the modular organization is not simply a collection of independently varying program groups. Instead, selected modules are coupled by opposing interactions, suggesting that changes in one group of program states are accompanied by contrasting states in another group.
+
+The relationship between differentiation-associated programs and proliferation-related programs is particularly relevant in the context of the original Norman analysis. Norman et al.~reported that the transcriptional manifold contained distinct erythroid, granulocyte, and megakaryocyte states and noted that differentiation and a concomitant decrease in proliferation contributed to the structure of the perturbational landscape \citep{Norman2019}. The D-SPIN results are consistent with this general organization. The erythroid-associated Programs 7 and 9 occupy one network module, while several cell-cycle-associated programs are contained in a separate module. Negative interactions connect selected programs across these modules, suggesting that the differentiation-associated and proliferative transcriptional states are not independent components of the inferred network.
+
+The megakaryocyte-associated response provides another example of this organization. Program 4, which showed a strong response to MAPK1- and ETS2-containing perturbations, was located within the same module as Programs 5 and 20 but was connected to these programs through a combination of positive and negative interactions. In particular, Program 6 showed a strong negative interaction with Program 4, while Program 16 was positively connected to Program 7 and Program 4 was strongly connected within the second module. These relationships suggest that the MAPK1/ETS2-associated response is embedded in a broader network of coordinated and opposing program states rather than representing an isolated perturbational phenotype.
+
+The directionality of the interactions also provides an additional distinction from the correlation analysis. A positive relative-response correlation indicates that two programs tend to increase or decrease together across perturbations, but does not specify a preferential direction of interaction. In contrast, the directed network distinguishes interactions such as Program 7 $\rightarrow$ Program 5 from the reverse direction when the inferred interaction strengths are sufficiently asymmetric. The directional representation therefore adds information concerning the asymmetry of the inferred coupling between programs.
+
+This distinction is important when interpreting the strong interactions in the network. For example, Program 8 $\rightarrow$ Program 6 and Program 13 $\rightarrow$ Program 1 are strong positive directed interactions within modules, indicating a preferential direction in the inferred network even though both programs belong to the same positively connected component. Conversely, the negative interaction Program 7 $\rightarrow$ Program 5 connects two programs associated with different perturbational response states. The sign and direction of the edge therefore provide information that cannot be obtained from the program correlation matrix alone.
+
+At the same time, the D-SPIN directionality should not be interpreted as direct experimental evidence that one transcriptional program causally regulates another. The direction of an edge reflects asymmetry in the inferred interaction weights within the D-SPIN model rather than direct transcription-factor binding, biochemical regulation, or experimentally established causality. This distinction is particularly important when relating the network to the Norman perturbational landscape, because the Norman categories describe phenotypic outcomes of perturbations rather than directed molecular pathways. The agreement between the two analyses should therefore be interpreted as structural concordance rather than as a demonstration of causal mechanisms.
+
+The sensitivity analysis supports this interpretation. Increasing the directional threshold from $0.05$ to $0.10$ and $0.20$ altered the classification of several individual edges, with more interactions becoming approximately reciprocal as the threshold became more stringent. However, the four module assignments remained unchanged across these directional thresholds. Thus, the precise direction of some individual edges is dependent on the chosen asymmetry criterion, whereas the higher-level organization of programs into modules is more stable. The strongest biological interpretation can therefore be assigned to the modular structure and the recurrent patterns of strong positive and negative interactions, while individual directional arrows should be interpreted more cautiously.
+
+Taken together, the directional network adds a structural interpretation to the correspondence between the D-SPIN results and the Norman perturbational landscape. The erythroid-associated Programs 7 and 9 form part of a module that is connected through negative interactions to programs associated with alternative perturbational states, particularly the granulocyte-associated Programs 5 and 20. Positive interactions are concentrated among programs belonging to the same modules, while several negative interactions bridge distinct modules. This organization is consistent with the broader transcriptional separation between differentiation-associated states identified in the Norman dataset and suggests that the latent programs inferred by D-SPIN are arranged into interacting groups rather than operating as independent transcriptional components.
+
+The combined results therefore suggest a hierarchy of relationships within the perturbational landscape. Norman et al.~identified distinct phenotypic regions associated with erythroid, granulocyte, megakaryocyte, and proliferative states. The D-SPIN relative-response analysis recovers these regions as characteristic response patterns of latent transcriptional programs, while the D-SPIN directional network further organizes those programs into modules connected by positive and negative interactions. In this framework, the relative-response matrix describes \emph{which perturbations activate or inhibit each program}, the program correlation matrix describes \emph{which programs tend to respond together across perturbations}, and the directional network describes \emph{how the inferred program states are asymmetrically coupled}. These three levels provide complementary views of the same perturbational transcriptional landscape.
 
 
 \end{document}

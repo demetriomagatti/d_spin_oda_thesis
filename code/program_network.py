@@ -119,6 +119,7 @@ plot_program_dendogram(relative_responses)
 
 ############################################################
 # 8. D-SPIN results
+
 node_names = [str(i) for i in range(model.network.shape[0])]
 network_graph, network_matrix = dsp.create_directed_network(
     model.network,
@@ -136,9 +137,11 @@ modules = dsp.compute_modules(
 )
 print(modules)
 
+spin_name_list_short = [f"P{i}" for i in range(1, 21)]
 dsp.plot_network_diagram(
     network_matrix,
     modules,
     directed=True,
-    weight_thres=0.15
+    weight_thres=0.25,
+    spin_name_list_short=spin_name_list_short    
 )

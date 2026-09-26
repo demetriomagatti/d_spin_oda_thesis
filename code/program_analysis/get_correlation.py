@@ -23,6 +23,7 @@ def plot_correlation_matrix(model):
     plt.yticks(range(20), program_correlation.index)
     plt.title("Correlation between gene-program activities")
     plt.tight_layout()
+    plt.grid(False)
     plt.show()
     return 
 
